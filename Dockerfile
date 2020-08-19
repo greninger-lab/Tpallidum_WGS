@@ -59,9 +59,7 @@ CMD ["bash"]
 RUN apt-get -y update && apt-get install -y \
    default-jdk  r-cran-rjava  r-cran-nloptr libssh2-1-dev
 
-RUN apt-get install libcurl4-openssl-dev 
 RUN yes | apt-get install libv8-dev
-RUN yes | apt-get install libssl-dev
 RUN yes | apt-get install libxml2-dev
 RUN yes | apt-get install libudunits2-dev
 RUN yes | apt install libgdal-dev
@@ -74,3 +72,26 @@ RUN R -e "BiocManager::install('GenomicAlignments')"
 RUN R -e "install.packages('Biostrings',dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "BiocManager::install('RCurl')"
 RUN R -e "BiocManager::install('doParallel')"
+RUN R -e "BiocManager::install('ShortRead')"
+
+
+RUN cd /usr/local/ && \
+    wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda && \
+    rm Miniconda3-latest-Linux-x86_64.sh && \
+    ln -s /usr/local/miniconda/bin/conda /usr/local/bin/ && \
+    conda init bash && \
+    /bin/bash -c "source /root/.bashrc" && \
+    conda install -c bioconda bowtie2 bedtools bwa mafft bcftools tabix && \
+	conda clean -afy
+
+WORKDIR /usr/src
+#Samtools
+RUN wget https://github.com/samtools/samtools/releases/download/1.9/samtools-1.9.tar.bz2 && \
+	tar jxf samtools-1.9.tar.bz2 && \
+	rm samtools-1.9.tar.bz2 && \
+	cd samtools-1.9 && \
+	./configure --prefix $(pwd) && \
+	make
+
+ENV PATH=${PATH}:/usr/src/samtools-1.9 

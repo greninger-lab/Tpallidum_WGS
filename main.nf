@@ -59,12 +59,23 @@ ADAPTERS = file("${baseDir}/All_adapters.fa")
 REF_FASTAS = file("${baseDir}/refs/TPA_refseqs.fasta")
 REF_FASTAS_TRIM = file("${baseDir}/refs/TPA_refseqs_trim.fasta")
 NC_021508 = file("${baseDir}/refs/NC_021508.fasta")
+// bowtie2 indexes
 NC_021508_1 = file("${baseDir}/refs/NC_021508.1.bt2")
 NC_021508_2 = file("${baseDir}/refs/NC_021508.2.bt2")
 NC_021508_3 = file("${baseDir}/refs/NC_021508.3.bt2")
 NC_021508_4 = file("${baseDir}/refs/NC_021508.4.bt2")
 NC_021508_5 = file("${baseDir}/refs/NC_021508.rev.1.bt2")
 NC_021508_6 = file("${baseDir}/refs/NC_021508.rev.2.bt2")
+// bwa indexes
+NC_021508_BWA1 = file("${baseDir}/refs/NC_021508.fasta.amb")
+NC_021508_BWA2 = file("${baseDir}/refs/NC_021508.fasta.ann")
+NC_021508_BWA3 = file("${baseDir}/refs/NC_021508.fasta.bwt")
+NC_021508_BWA4 = file("${baseDir}/refs/NC_021508.fasta.pac")
+NC_021508_BWA5 = file("${baseDir}/refs/NC_021508.fasta.sa")
+
+// Scripts
+TP_MAKE_SEQ = file("${baseDir}/tp_make_seq.R")
+TP_GENERATE_CONSENSUS = file("${baseDir}/tp_generate_consensus.R")
 
 
 // Read in fastq pairs into input_read_ch
@@ -122,6 +133,7 @@ process filterTp {
     output:
         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") into Trimmed_filtered_reads_ch1
         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") into Trimmed_filtered_reads_ch2
+        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") into Trimmed_filtered_reads_ch3
 
     script:
     """
@@ -164,14 +176,14 @@ process samToBam {
     input:
         tuple val(base),file("${base}.sam") from Aligned_sam_ch
     output:
-        tuple val(base),file("${base}.sorted.bam") into Sorted_bam_ch
+        tuple val(base),file("${base}_firstmap.sorted.bam") into Sorted_bam_ch
     
     script:
     """
     #!/bin/bash
 
     /usr/local/bin/samtools view -bS ${base}.sam > ${base}.bam
-    /usr/local/bin/samtools sort -o ${base}.sorted.bam ${base.bam}
+    /usr/local/bin/samtools sort -o ${base}_firstmap.sorted.bam ${base}.bam
     """
 
 }
@@ -185,7 +197,8 @@ process deNovoAssembly {
 
     input:
         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Trimmed_filtered_reads_ch2
-
+    output:
+        tuple val(base),file("assembly.gfa"),file("assembly.fasta") into Unicycler_ch
     script:
     """
     #!/bin/bash
@@ -194,6 +207,72 @@ process deNovoAssembly {
 
     """
 }
+
+// Merges assembly and mapping to make consensus sequence
+process mergeAssemblyMapping {
+    container "quay.io/michellejlin/tpallidum_wgs:latest"
+
+    // Retry on fail at most three times 
+    errorStrategy 'retry'
+    maxRetries 1
+
+    input:
+        tuple val(base),file("assembly.gfa"),file("assembly.fasta") from Unicycler_ch
+        tuple val(base),file("${base}_firstmap.sorted.bam") from Sorted_bam_ch
+        file(NC_021508)
+        file(NC_021508_BWA1)
+        file(NC_021508_BWA2)
+        file(NC_021508_BWA3)
+        file(NC_021508_BWA4)
+        file(NC_021508_BWA5)
+        file(TP_MAKE_SEQ)
+    output:
+        tuple val(base),file("${base}_consensus.fasta") into Consensus_ch
+
+    script:
+    """
+    #!/bin/bash
+    echo ${base}
+
+    Rscript --vanilla ${TP_MAKE_SEQ} \'${base}\' \'NC_021508\'
+    """
+}
+
+process remapReads {
+    container "quay.io/michellejlin/tpallidum_wgs"
+
+    input:
+        tuple val(base),file("${base}_consensus.fasta") from Consensus_ch
+        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Trimmed_filtered_reads_ch3
+    output:
+        tuple val(base),file("${base}_remapped.sorted.bam") into Remapped_bam_ch
+
+    script:
+    """
+    /usr/local/miniconda/bin/bowtie2-build -q ${base}_consensus.fasta ${base}_aligned_scaffolds_NC_021508
+    /usr/local/miniconda/bin/bowtie2 -x ${base}_aligned_scaffolds_NC_021508 -1 ${base}_matched_r1.fastq.gz -2 ${base}_matched_r2.fastq.gz -p ${task.cpus} | /usr/local/miniconda/bin/samtools view -bS - > ${base}_remapped.bam 
+    /usr/local/miniconda/bin/samtools sort -o ${base}_remapped.sorted.bam ${base}_remapped.bam
+    """
+}
+
+// process generateConsensus {
+//     container "quay.io/michellejlin/tpallidum_wgs"
+
+//     input:
+//         tuple val(base),file("${base}_remapped.sorted.bam") from Remapped_bam_ch
+//         tuple val(base),file("${base}_consensus.fasta") from Consensus_ch
+//         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Trimmed_filtered_reads_ch3
+//     output:
+//         tuple val(base),file("${base}_remapped.sorted.bam")
+
+//     script:
+//     """
+//     /usr/local/miniconda/bin/bowtie2-build -q ${base}_consensus.fasta ${base}_aligned_scaffolds_NC_021508
+//     /usr/local/miniconda/bin/bowtie2 -x ${base}_aligned_scaffolds_NC_021508 -1 ${base}_matched_r1.fastq.gz -2 ${base}_matched_r2.fastq.gz -p ${task.cpus} | /usr/local/miniconda/bin/samtools view -bS - > ${base}_remapped.bam 
+//     /usr/local/miniconda/bin/samtools sort -o ${base}_remapped.sorted.bam ${base}_remapped.bam
+//     """
+
+// }
 
 
 } 
