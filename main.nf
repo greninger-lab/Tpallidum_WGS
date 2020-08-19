@@ -177,6 +177,7 @@ process samToBam {
         tuple val(base),file("${base}.sam") from Aligned_sam_ch
     output:
         tuple val(base),file("${base}_firstmap.sorted.bam") into Sorted_bam_ch
+        tuple val(base),file("${base}_firstmap.sorted.bam") into Sorted_bam_ch2
     
     script:
     """
@@ -228,6 +229,7 @@ process mergeAssemblyMapping {
         file(TP_MAKE_SEQ)
     output:
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch
+        tuple val(base),file("${base}_consensus.fasta") into Consensus_ch2
 
     script:
     """
@@ -250,29 +252,43 @@ process remapReads {
     script:
     """
     /usr/local/miniconda/bin/bowtie2-build -q ${base}_consensus.fasta ${base}_aligned_scaffolds_NC_021508
-    /usr/local/miniconda/bin/bowtie2 -x ${base}_aligned_scaffolds_NC_021508 -1 ${base}_matched_r1.fastq.gz -2 ${base}_matched_r2.fastq.gz -p ${task.cpus} | /usr/local/miniconda/bin/samtools view -bS - > ${base}_remapped.bam 
-    /usr/local/miniconda/bin/samtools sort -o ${base}_remapped.sorted.bam ${base}_remapped.bam
+    /usr/local/miniconda/bin/bowtie2 -x ${base}_aligned_scaffolds_NC_021508 -1 ${base}_matched_r1.fastq.gz -2 ${base}_matched_r2.fastq.gz -p ${task.cpus} | /usr/src/samtools-1.9/samtools view -bS - > ${base}_remapped.bam 
+    /usr/src/samtools-1.9/samtools sort -o ${base}_remapped.sorted.bam ${base}_remapped.bam
     """
 }
 
-// process generateConsensus {
-//     container "quay.io/michellejlin/tpallidum_wgs"
+process generateConsensus {
+    container "quay.io/michellejlin/tpallidum_wgs"
 
-//     input:
-//         tuple val(base),file("${base}_remapped.sorted.bam") from Remapped_bam_ch
-//         tuple val(base),file("${base}_consensus.fasta") from Consensus_ch
-//         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Trimmed_filtered_reads_ch3
-//     output:
-//         tuple val(base),file("${base}_remapped.sorted.bam")
+    input:
+        tuple val(base),file("${base}_remapped.sorted.bam") from Remapped_bam_ch
+        tuple val(base),file("${base}_consensus.fasta") from Consensus_ch2
+        tuple val(base),file("${base}_firstmap.sorted.bam") from Sorted_bam_ch2
+        file(TP_GENERATE_CONSENSUS)
+    output:
+        tuple val(base),file("${base}_finalconsensus.fasta"),file("${base}_mappingstats.csv") into Prokka_consensus_ch
 
-//     script:
-//     """
-//     /usr/local/miniconda/bin/bowtie2-build -q ${base}_consensus.fasta ${base}_aligned_scaffolds_NC_021508
-//     /usr/local/miniconda/bin/bowtie2 -x ${base}_aligned_scaffolds_NC_021508 -1 ${base}_matched_r1.fastq.gz -2 ${base}_matched_r2.fastq.gz -p ${task.cpus} | /usr/local/miniconda/bin/samtools view -bS - > ${base}_remapped.bam 
-//     /usr/local/miniconda/bin/samtools sort -o ${base}_remapped.sorted.bam ${base}_remapped.bam
-//     """
+    script:
+    """
+    Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}' \'NC_021508\'
+    """
 
-// }
+}
+
+process annotateConsensus {
+    container "quay.io/biocontainers/prokka:1.14.6--pl526_0"
+
+    input:
+    tuple val(base),file("${base}_finalconsensus.fasta"),file("${base}_mappingstats.csv") from Prokka_consensus_ch
+
+    output:
+
+    script:
+    """
+    prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_preprokka_consensus.fasta
+
+    """
+}
 
 
 } 

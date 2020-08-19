@@ -1,3 +1,5 @@
+# Adapted for Nextflow Aug 2020
+
 # HSV script but works with any viral sequence: This script makes a new reference sequence from de novo assembled scaffolds
 # Pavitra Roychoudhury
 # Sep 2017
@@ -69,6 +71,10 @@ system(paste('/usr/src/samtools-1.9/samtools sort -o',
 #file.remove(bamfname);
 #file.rename(gsub('.bam','.sorted.bam',bamfname),bamfname)
 print('done ...')
+
+bamfname<-gsub('.bam','.sorted.bam',bamfname)
+print("bamfname")
+print(bamfname)
 
 
 #Make a new reference from scaffolds
