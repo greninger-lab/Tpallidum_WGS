@@ -108,6 +108,8 @@ process trimReads {
         file ADAPTERS
     output: 
         tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz") into Trim_out_ch
+    
+    publishDir "${params.OUTDIR}trimmed_fastqs", mode: 'copy', pattern: '*.paired.fastq.gz'
 
     script:
     """
@@ -125,20 +127,22 @@ process filterTp {
 
     // Retry on fail at most three times 
     errorStrategy 'retry'
-    maxRetries 1
+    maxRetries 2
 
     input:
         tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz") from Trim_out_ch
-        file REF_FASTAS_TRIM
+        file REF_FASTAS
     output:
         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") into Trimmed_filtered_reads_ch1
         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") into Trimmed_filtered_reads_ch2
         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") into Trimmed_filtered_reads_ch3
+    
+    publishDir "${params.OUTDIR}trimmed_filtered_fastqs", mode: 'copy', pattern: '*_matched*.fastq.gz'
 
     script:
     """
     #!/bin/bash
-    bbduk.sh in1='${base}.R1.paired.fastq.gz' in2='${base}.R2.paired.fastq.gz' out1='${base}_unmatched_r1.fastq.gz' out2='${base}_unmatched_r2.fastq.gz' outm1='${base}_matched_r1.fastq.gz' outm2='${base}_matched_r2.fastq.gz' ref=${REF_FASTAS_TRIM} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=${task.cpus} -Xmx30g
+    bbduk.sh in1='${base}.R1.paired.fastq.gz' in2='${base}.R2.paired.fastq.gz' out1='${base}_unmatched_r1.fastq.gz' out2='${base}_unmatched_r2.fastq.gz' outm1='${base}_matched_r1.fastq.gz' outm2='${base}_matched_r2.fastq.gz' ref=${REF_FASTAS} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=16 -Xmx100g
 
     """
 }
@@ -179,6 +183,8 @@ process samToBam {
         tuple val(base),file("${base}_firstmap.sorted.bam") into Sorted_bam_ch
         tuple val(base),file("${base}_firstmap.sorted.bam") into Sorted_bam_ch2
     
+    publishDir "${params.OUTDIR}bowtie2_bams", mode: 'copy', pattern: '*_firstmap.sorted.bam'
+
     script:
     """
     #!/bin/bash
@@ -200,6 +206,7 @@ process deNovoAssembly {
         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Trimmed_filtered_reads_ch2
     output:
         tuple val(base),file("assembly.gfa"),file("assembly.fasta") into Unicycler_ch
+        
     script:
     """
     #!/bin/bash
@@ -231,6 +238,8 @@ process mergeAssemblyMapping {
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch2
 
+    publishDir "${params.OUTDIR}merged_assembly_mapping_consensus", mode: 'copy', pattern: '*_consensus.fasta'
+
     script:
     """
     #!/bin/bash
@@ -248,6 +257,8 @@ process remapReads {
         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Trimmed_filtered_reads_ch3
     output:
         tuple val(base),file("${base}_remapped.sorted.bam") into Remapped_bam_ch
+
+    publishDir "${params.OUTDIR}remapped_bwamem_bams", mode: 'copy', pattern: '*_remapped.sorted.bam'
 
     script:
     """
@@ -282,6 +293,9 @@ process annotateConsensus {
     tuple val(base),file("${base}_finalconsensus.fasta"),file("${base}_mappingstats.csv") from Prokka_consensus_ch
 
     output:
+        file("*") into Annotated_ch
+
+    publishDir "${params.OUTDIR}finalconsensus", mode: 'copy', pattern: '*'
 
     script:
     """
