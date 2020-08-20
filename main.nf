@@ -279,6 +279,8 @@ process generateConsensus {
     output:
         tuple val(base),file("${base}_finalconsensus.fasta"),file("${base}_mappingstats.csv") into Prokka_consensus_ch
 
+    publishDir "${params.OUTDIR}finalconsensus", mode: 'copy', pattern: '*_finalconsensus.fasta'
+
     script:
     """
     Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}' \'NC_021508\'
@@ -295,11 +297,11 @@ process annotateConsensus {
     output:
         file("*") into Annotated_ch
 
-    publishDir "${params.OUTDIR}finalconsensus", mode: 'copy', pattern: '*'
+    publishDir "${params.OUTDIR}finalconsensus_prokka_annotations", mode: 'copy', pattern: '*'
 
     script:
     """
-    prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_preprokka_consensus.fasta
+    prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_finalconsensus.fasta
 
     """
 }
