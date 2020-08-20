@@ -123,7 +123,7 @@ process trimReads {
 
 // Use bbduk to filter reads that match Tp genomes
 process filterTp {
-    container "quay.io/thanhleviet/bbtools:latest"
+    container "staphb/bbtools:latest"
 
     // Retry on fail at most three times 
     errorStrategy 'retry'
@@ -142,7 +142,7 @@ process filterTp {
     script:
     """
     #!/bin/bash
-    bbduk.sh in1='${base}.R1.paired.fastq.gz' in2='${base}.R2.paired.fastq.gz' out1='${base}_unmatched_r1.fastq.gz' out2='${base}_unmatched_r2.fastq.gz' outm1='${base}_matched_r1.fastq.gz' outm2='${base}_matched_r2.fastq.gz' ref=${REF_FASTAS} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=16 -Xmx100g
+    /bbmap/bbduk.sh in1='${base}.R1.paired.fastq.gz' in2='${base}.R2.paired.fastq.gz' out1='${base}_unmatched_r1.fastq.gz' out2='${base}_unmatched_r2.fastq.gz' outm1='${base}_matched_r1.fastq.gz' outm2='${base}_matched_r2.fastq.gz' ref=${REF_FASTAS} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=14 -Xmx105g
 
     """
 }
