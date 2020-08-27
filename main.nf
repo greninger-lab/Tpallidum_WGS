@@ -75,6 +75,8 @@ NC_021508_BWA3 = file("${baseDir}/refs/NC_021508.fasta.bwt")
 NC_021508_BWA4 = file("${baseDir}/refs/NC_021508.fasta.pac")
 NC_021508_BWA5 = file("${baseDir}/refs/NC_021508.fasta.sa")
 
+REF_GB = file("${baseDir}/refs/NC_021508.gb")
+
 // Scripts
 TP_MAKE_SEQ = file("${baseDir}/tp_make_seq.R")
 TP_GENERATE_CONSENSUS = file("${baseDir}/tp_generate_consensus.R")
@@ -136,7 +138,7 @@ process filterTp {
         file REF_FASTAS
     output:
         tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") into Trimmed_filtered_reads_ch1
-        tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r1.fastq.gz") into Trimmed_unmatched_reads
+        tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r2.fastq.gz") into Trimmed_unmatched_reads
     
     publishDir "${params.OUTDIR}rRNA_filtered_fastqs", mode: 'copy', pattern: '*matched_tpa*.fastq.gz'
 
@@ -158,7 +160,7 @@ process mapUnmatchedReads {
     maxRetries 2
 
     input:
-        tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r1.fastq.gz") from Trimmed_unmatched_reads
+        tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r2.fastq.gz") from Trimmed_unmatched_reads
         file REF_FASTAS_MASKED
     output:
         tuple val(base),file("${base}_matched_rRNA_r1.fastq.gz"), file("${base}_matched_rRNA_r2.fastq.gz") into RRNA_matched_reads
@@ -169,7 +171,7 @@ process mapUnmatchedReads {
     script:
     """
     #!/bin/bash
-    /bbmap/bbduk.sh in1='${base}_unmatched_tpa_r1.fastq.gz' in2='${base}_unmatched_tpa_r2.fastq.gz' out1='${base}_unmatched_rRNA_r1.fastq.gz' out2='${base}_unmatched2_rRNA_r2.fastq.gz' outm1='${base}_matched_rRNA_r1.fastq.gz' outm2='${base}_matched_rRNA_r2.fastq.gz' ref=${REF_FASTAS_MASKED} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=16 -Xmx105g
+    /bbmap/bbduk.sh in1='${base}_unmatched_tpa_r1.fastq.gz' in2='${base}_unmatched_tpa_r2.fastq.gz' out1='${base}_unmatched_rRNA_r1.fastq.gz' out2='${base}_unmatched2_rRNA_r2.fastq.gz' outm1='${base}_matched_rRNA_r1.fastq.gz' outm2='${base}_matched_rRNA_r2.fastq.gz' ref=${REF_FASTAS_MASKED} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=14 -Xmx105g
 
     """
 }
@@ -193,16 +195,16 @@ process mapReads {
         file(NC_021508_6)
     output:
         tuple val(base),file("${base}.sam") into Aligned_sam_ch
-        tuple val(base),file("${base}_cat_r1.fastq.gz"),file("${base}_cat_r2.fastq.gz") into Matched_cat_reads
-        tuple val(base),file("${base}_cat_r1.fastq.gz"),file("${base}_cat_r2.fastq.gz") into Matched_cat_reads_ch2
+        tuple val(base),file("${base}_matched_r1.fastq.gz"),file("${base}_matched_r2.fastq.gz") into Matched_cat_reads
+        tuple val(base),file("${base}_matched_r1.fastq.gz"),file("${base}_matched_r2.fastq.gz") into Matched_cat_reads_ch2
 
     script:
     """
     #!/bin/bash
 
     echo "Concatenating TPA and rRNA reads for ${base}..."
-    cat ${base}_matched_tpa_r1.fastq.gz ${base}_matched_rRNA_r1.fastq.gz > ${base}_cat_r1.fastq.gz
-    cat ${base}_matched_tpa_r2.fastq.gz ${base}_matched_rRNA_r2.fastq.gz > ${base}_cat_r2.fastq.gz
+    cat ${base}_matched_tpa_r1.fastq.gz ${base}_matched_rRNA_r1.fastq.gz > ${base}_matched_r1.fastq.gz
+    cat ${base}_matched_tpa_r2.fastq.gz ${base}_matched_rRNA_r2.fastq.gz > ${base}_matched_r2.fastq.gz
     bowtie2 -x NC_021508 -1 '${base}_matched_r1.fastq.gz' -2 '${base}_matched_r2.fastq.gz' -p ${task.cpus} > ${base}.sam
     """
 }
@@ -214,7 +216,6 @@ process samToBam {
         tuple val(base),file("${base}.sam") from Aligned_sam_ch
     output:
         tuple val(base),file("${base}_firstmap.sorted.bam") into Sorted_bam_ch
-        tuple val(base),file("${base}_firstmap.sorted.bam") into Sorted_bam_ch2
     
     publishDir "${params.OUTDIR}bowtie2_bams", mode: 'copy', pattern: '*_firstmap.sorted.bam'
 
@@ -228,6 +229,43 @@ process samToBam {
 
 }
 
+process removeDuplicates{
+    container "quay.io/biocontainers/picard:2.23.3--0"
+
+    input:
+        tuple val(base),file("${base}_firstmap.sorted.bam") from Sorted_bam_ch
+    output:
+        tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch
+        tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch2
+        tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch3
+    
+    script:
+    """
+    #!/bin/bash
+
+    /usr/local/bin/picard MarkDuplicates INPUT=${base}_firstmap.sorted.bam OUTPUT=${base}_firstmap_dedup.bam METRICS_FILE=${base}_metrics.txt REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=SILENT
+    """
+}
+
+process callVariants {
+    container "quay.io/biocontainers/freebayes:1.3.2--py37h26878c9_2"
+
+    input:
+        tuple val(base),file("${base}_firstmap_dedup.bam") from Sorted_dedup_bam_ch3
+        file(NC_021508)
+    output:
+        file("${base}.vcf") into Freebayes_vcf
+    
+    publishDir "${params.OUTDIR}vcfs", mode: 'copy', pattern: '*.vcf'
+    
+    script:
+    """
+    #!/bin/bash
+
+    /usr/local/bin/freebayes -f ${NC_021508} -p 1 ${base}_firstmap_dedup.bam -v ${base}.vcf
+    """
+}
+
 process deNovoAssembly {
     container "quay.io/biocontainers/unicycler:0.4.4--py37h13b99d1_3"
 
@@ -239,6 +277,9 @@ process deNovoAssembly {
         tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Matched_cat_reads
     output:
         tuple val(base),file("assembly.gfa"),file("assembly.fasta") into Unicycler_ch
+        file("*") into Unicycler_dump_ch
+
+    publishDir "${params.OUTDIR}unicycler_output", mode: 'copy', pattern: '*'
         
     script:
     """
@@ -259,7 +300,7 @@ process mergeAssemblyMapping {
 
     input:
         tuple val(base),file("assembly.gfa"),file("assembly.fasta") from Unicycler_ch
-        tuple val(base),file("${base}_firstmap.sorted.bam") from Sorted_bam_ch
+        tuple val(base),file("${base}_firstmap_dedup.bam") from Sorted_dedup_bam_ch
         file(NC_021508)
         file(NC_021508_BWA1)
         file(NC_021508_BWA2)
@@ -307,7 +348,7 @@ process generateConsensus {
     input:
         tuple val(base),file("${base}_remapped.sorted.bam") from Remapped_bam_ch
         tuple val(base),file("${base}_consensus.fasta") from Consensus_ch2
-        tuple val(base),file("${base}_firstmap.sorted.bam") from Sorted_bam_ch2
+        tuple val(base),file("${base}_firstmap_dedup.bam") from Sorted_dedup_bam_ch2
         file(TP_GENERATE_CONSENSUS)
     output:
         tuple val(base),file("${base}_finalconsensus.fasta"),file("${base}_mappingstats.csv") into Prokka_consensus_ch
@@ -321,11 +362,13 @@ process generateConsensus {
 
 }
 
+// Annotate final consensus with prokka
 process annotateConsensus {
     container "quay.io/biocontainers/prokka:1.14.6--pl526_0"
 
     input:
     tuple val(base),file("${base}_finalconsensus.fasta"),file("${base}_mappingstats.csv") from Prokka_consensus_ch
+    file(REF_GB)
 
     output:
         file("*") into Annotated_ch
@@ -334,7 +377,8 @@ process annotateConsensus {
 
     script:
     """
-    prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_finalconsensus.fasta
+    #prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_finalconsensus.fasta
+    prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_finalconsensus.fasta
 
     """
 }

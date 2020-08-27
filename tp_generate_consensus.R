@@ -121,7 +121,7 @@ generate_consensus<-function(bamfname){
 clean_consensus_tp<-function(sampname,merged_bam_folder,mapped_reads_folder,ref){
   mapping_stats<-data.frame(ref=ref,
                             bamfname_merged=grep(sampname,list.files(merged_bam_folder,'*remapped.sorted.bam$',full.names=T),value=T),
-                            bamfname_mapped=grep(sampname,list.files(mapped_reads_folder,'*firstmap.sorted.bam$',full.names=T),value=T),
+                            bamfname_mapped=grep(sampname,list.files(mapped_reads_folder,'*firstmap_dedup.bam$',full.names=T),value=T),
                             mapped_reads_ref=0,mapped_reads_assemblyref=0,perc_Ns=0,num_Ns=0,width=0,
                             stringsAsFactors=F);
   
