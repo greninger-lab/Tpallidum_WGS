@@ -56,7 +56,9 @@ if (!params.OUTDIR.endsWith("/")){
 
 // Reference files
 ADAPTERS = file("${baseDir}/All_adapters.fa")
-REF_FASTAS = file("${baseDir}/refs/TPA_refseqs.fasta")
+//REF_FASTAS = file("${baseDir}/refs/TPA_refseqs.fasta")
+REF_FASTAS = file("${baseDir}/refs/TPA_rRNA_refs.fasta")
+REF_FASTAS_MASKED = file("${baseDir}/refs/TP_refs_rRNA_masked.fasta")
 REF_FASTAS_TRIM = file("${baseDir}/refs/TPA_refseqs_trim.fasta")
 NC_021508 = file("${baseDir}/refs/NC_021508.fasta")
 // bowtie2 indexes
@@ -133,16 +135,41 @@ process filterTp {
         tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz") from Trim_out_ch
         file REF_FASTAS
     output:
-        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") into Trimmed_filtered_reads_ch1
-        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") into Trimmed_filtered_reads_ch2
-        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") into Trimmed_filtered_reads_ch3
+        tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") into Trimmed_filtered_reads_ch1
+        tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r1.fastq.gz") into Trimmed_unmatched_reads
     
-    publishDir "${params.OUTDIR}trimmed_filtered_fastqs", mode: 'copy', pattern: '*_matched*.fastq.gz'
+    publishDir "${params.OUTDIR}rRNA_filtered_fastqs", mode: 'copy', pattern: '*matched_tpa*.fastq.gz'
 
     script:
     """
     #!/bin/bash
-    /bbmap/bbduk.sh in1='${base}.R1.paired.fastq.gz' in2='${base}.R2.paired.fastq.gz' out1='${base}_unmatched_r1.fastq.gz' out2='${base}_unmatched_r2.fastq.gz' outm1='${base}_matched_r1.fastq.gz' outm2='${base}_matched_r2.fastq.gz' ref=${REF_FASTAS} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=14 -Xmx105g
+    echo "Filtering trimmed reads of ${base} against TPA rRNA reference..."
+    /bbmap/bbduk.sh in1='${base}.R1.paired.fastq.gz' in2='${base}.R2.paired.fastq.gz' out1='${base}_unmatched_tpa_r1.fastq.gz' out2='${base}_unmatched_tpa_r2.fastq.gz' outm1='${base}_matched_tpa_r1.fastq.gz' outm2='${base}_matched_tpa_r2.fastq.gz' ref=${REF_FASTAS} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=16 -Xmx50g
+
+    """
+}
+
+// Take unmatched reads from rRNA filter and map to TPA genome less stringently
+process mapUnmatchedReads {
+    container "staphb/bbtools:latest"
+
+    // Retry on fail at most three times 
+    errorStrategy 'retry'
+    maxRetries 2
+
+    input:
+        tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r1.fastq.gz") from Trimmed_unmatched_reads
+        file REF_FASTAS_MASKED
+    output:
+        tuple val(base),file("${base}_matched_rRNA_r1.fastq.gz"), file("${base}_matched_rRNA_r2.fastq.gz") into RRNA_matched_reads
+        tuple val(base),file("${base}_unmatched_rRNA_r1.fastq.gz"), file("${base}_unmatched_rRNA_r1.fastq.gz") into RRNA_unmatched_reads
+    
+    publishDir "${params.OUTDIR}TPA_filtered_fastqs", mode: 'copy', pattern: '*_matched_rRNA*.fastq.gz'
+
+    script:
+    """
+    #!/bin/bash
+    /bbmap/bbduk.sh in1='${base}_unmatched_tpa_r1.fastq.gz' in2='${base}_unmatched_tpa_r2.fastq.gz' out1='${base}_unmatched_rRNA_r1.fastq.gz' out2='${base}_unmatched2_rRNA_r2.fastq.gz' outm1='${base}_matched_rRNA_r1.fastq.gz' outm2='${base}_matched_rRNA_r2.fastq.gz' ref=${REF_FASTAS_MASKED} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=16 -Xmx105g
 
     """
 }
@@ -155,7 +182,8 @@ process mapReads {
     maxRetries 1
 
     input:
-        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Trimmed_filtered_reads_ch1
+        tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") from Trimmed_filtered_reads_ch1
+        tuple val(base),file("${base}_matched_rRNA_r1.fastq.gz"), file("${base}_matched_rRNA_r2.fastq.gz") from RRNA_matched_reads
         file(NC_021508)
         file(NC_021508_1)
         file(NC_021508_2)
@@ -165,11 +193,16 @@ process mapReads {
         file(NC_021508_6)
     output:
         tuple val(base),file("${base}.sam") into Aligned_sam_ch
+        tuple val(base),file("${base}_cat_r1.fastq.gz"),file("${base}_cat_r2.fastq.gz") into Matched_cat_reads
+        tuple val(base),file("${base}_cat_r1.fastq.gz"),file("${base}_cat_r2.fastq.gz") into Matched_cat_reads_ch2
 
     script:
     """
     #!/bin/bash
 
+    echo "Concatenating TPA and rRNA reads for ${base}..."
+    cat ${base}_matched_tpa_r1.fastq.gz ${base}_matched_rRNA_r1.fastq.gz > ${base}_cat_r1.fastq.gz
+    cat ${base}_matched_tpa_r2.fastq.gz ${base}_matched_rRNA_r2.fastq.gz > ${base}_cat_r2.fastq.gz
     bowtie2 -x NC_021508 -1 '${base}_matched_r1.fastq.gz' -2 '${base}_matched_r2.fastq.gz' -p ${task.cpus} > ${base}.sam
     """
 }
@@ -203,7 +236,7 @@ process deNovoAssembly {
     maxRetries 1
 
     input:
-        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Trimmed_filtered_reads_ch2
+        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Matched_cat_reads
     output:
         tuple val(base),file("assembly.gfa"),file("assembly.fasta") into Unicycler_ch
         
@@ -254,7 +287,7 @@ process remapReads {
 
     input:
         tuple val(base),file("${base}_consensus.fasta") from Consensus_ch
-        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Trimmed_filtered_reads_ch3
+        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Matched_cat_reads_ch2
     output:
         tuple val(base),file("${base}_remapped.sorted.bam") into Remapped_bam_ch
 
