@@ -137,16 +137,16 @@ process filterTp {
         tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz") from Trim_out_ch
         file REF_FASTAS
     output:
-        tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") into Trimmed_filtered_reads_ch1
-        tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r2.fastq.gz") into Trimmed_unmatched_reads
+        tuple val(base),file("${base}_matched_rRNA_r1.fastq.gz"), file("${base}_matched_rRNA_r2.fastq.gz") into Trimmed_filtered_reads_ch1
+        tuple val(base),file("${base}_unmatched_rRNA_r1.fastq.gz"), file("${base}_unmatched_rRNA_r2.fastq.gz") into Trimmed_unmatched_reads
     
-    publishDir "${params.OUTDIR}rRNA_filtered_fastqs", mode: 'copy', pattern: '*matched_tpa*.fastq.gz'
+    publishDir "${params.OUTDIR}rRNA_filtered_fastqs", mode: 'copy', pattern: '*matched_rRNA*.fastq.gz'
 
     script:
     """
     #!/bin/bash
     echo "Filtering trimmed reads of ${base} against TPA rRNA reference..."
-    /bbmap/bbduk.sh in1='${base}.R1.paired.fastq.gz' in2='${base}.R2.paired.fastq.gz' out1='${base}_unmatched_tpa_r1.fastq.gz' out2='${base}_unmatched_tpa_r2.fastq.gz' outm1='${base}_matched_tpa_r1.fastq.gz' outm2='${base}_matched_tpa_r2.fastq.gz' ref=${REF_FASTAS} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=16 -Xmx50g
+    /bbmap/bbduk.sh in1='${base}.R1.paired.fastq.gz' in2='${base}.R2.paired.fastq.gz' out1='${base}_unmatched_rRNA_r1.fastq.gz' out2='${base}_unmatched_rRNA_r2.fastq.gz' outm1='${base}_matched_rRNA_r1.fastq.gz' outm2='${base}_matched_rRNA_r2.fastq.gz' ref=${REF_FASTAS} k=31 hdist=1 mcf=0.98 rieb=f stats='${base}_stats_tp.txt' overwrite=TRUE t=16 -Xmx50g
 
     """
 }
@@ -160,18 +160,18 @@ process mapUnmatchedReads {
     maxRetries 2
 
     input:
-        tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r2.fastq.gz") from Trimmed_unmatched_reads
+        tuple val(base),file("${base}_unmatched_rRNA_r1.fastq.gz"), file("${base}_unmatched_rRNA_r2.fastq.gz") from Trimmed_unmatched_reads
         file REF_FASTAS_MASKED
     output:
-        tuple val(base),file("${base}_matched_rRNA_r1.fastq.gz"), file("${base}_matched_rRNA_r2.fastq.gz") into RRNA_matched_reads
-        tuple val(base),file("${base}_unmatched_rRNA_r1.fastq.gz"), file("${base}_unmatched_rRNA_r1.fastq.gz") into RRNA_unmatched_reads
+        tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") into TPA_matched_reads
+        tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r1.fastq.gz") into TPA_unmatched_reads
     
-    publishDir "${params.OUTDIR}TPA_filtered_fastqs", mode: 'copy', pattern: '*_matched_rRNA*.fastq.gz'
+    publishDir "${params.OUTDIR}TPA_filtered_fastqs", mode: 'copy', pattern: '*_matched_tpa*.fastq.gz'
 
     script:
     """
     #!/bin/bash
-    /bbmap/bbduk.sh in1='${base}_unmatched_tpa_r1.fastq.gz' in2='${base}_unmatched_tpa_r2.fastq.gz' out1='${base}_unmatched_rRNA_r1.fastq.gz' out2='${base}_unmatched2_rRNA_r2.fastq.gz' outm1='${base}_matched_rRNA_r1.fastq.gz' outm2='${base}_matched_rRNA_r2.fastq.gz' ref=${REF_FASTAS_MASKED} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=14 -Xmx105g
+    /bbmap/bbduk.sh in1='${base}_unmatched_rRNA_r1.fastq.gz' in2='${base}_unmatched_rRNA_r2.fastq.gz' out1='${base}_unmatched_tpa_r1.fastq.gz' out2='${base}_unmatched2_tpa_r2.fastq.gz' outm1='${base}_matched_tpa_r1.fastq.gz' outm2='${base}_matched_tpa_r2.fastq.gz' ref=${REF_FASTAS_MASKED} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=14 -Xmx105g
 
     """
 }
@@ -185,7 +185,7 @@ process mapReads {
 
     input:
         tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") from Trimmed_filtered_reads_ch1
-        tuple val(base),file("${base}_matched_rRNA_r1.fastq.gz"), file("${base}_matched_rRNA_r2.fastq.gz") from RRNA_matched_reads
+        tuple val(base),file("${base}_matched_rRNA_r1.fastq.gz"), file("${base}_matched_rRNA_r2.fastq.gz") from TPA_matched_reads
         file(NC_021508)
         file(NC_021508_1)
         file(NC_021508_2)
@@ -195,8 +195,9 @@ process mapReads {
         file(NC_021508_6)
     output:
         tuple val(base),file("${base}.sam") into Aligned_sam_ch
-        tuple val(base),file("${base}_matched_r1.fastq.gz"),file("${base}_matched_r2.fastq.gz") into Matched_cat_reads
-        tuple val(base),file("${base}_matched_r1.fastq.gz"),file("${base}_matched_r2.fastq.gz") into Matched_cat_reads_ch2
+        // output deduped fastqs instead
+        // tuple val(base),file("${base}_matched_r1.fastq.gz"),file("${base}_matched_r2.fastq.gz") into Matched_cat_reads
+        // tuple val(base),file("${base}_matched_r1.fastq.gz"),file("${base}_matched_r2.fastq.gz") into Matched_cat_reads_ch2
 
     script:
     """
@@ -217,8 +218,6 @@ process samToBam {
     output:
         tuple val(base),file("${base}_firstmap.sorted.bam") into Sorted_bam_ch
     
-    publishDir "${params.OUTDIR}bowtie2_bams", mode: 'copy', pattern: '*_firstmap.sorted.bam'
-
     script:
     """
     #!/bin/bash
@@ -238,12 +237,18 @@ process removeDuplicates{
         tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch
         tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch2
         tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch3
+        
+        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") into Deduped_reads
+        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") into Deduped_reads_ch2
     
+    publishDir "${params.OUTDIR}deduped_bams", mode: 'copy', pattern: '*_firstmap_dedup.bam'
+
     script:
     """
     #!/bin/bash
 
     /usr/local/bin/picard MarkDuplicates INPUT=${base}_firstmap.sorted.bam OUTPUT=${base}_firstmap_dedup.bam METRICS_FILE=${base}_metrics.txt REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=SILENT
+    /usr/local/bin/picard SamToFastq I=${base}_firstmap_dedup.bam FASTQ=${base}_deduped_r1.fastq SECOND_END_FASTQ=${base}_deduped_r2.fastq VALIDATION_STRINGENCY=SILENT
     """
 }
 
@@ -274,18 +279,18 @@ process deNovoAssembly {
     maxRetries 1
 
     input:
-        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Matched_cat_reads
+        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads
     output:
         tuple val(base),file("assembly.gfa"),file("assembly.fasta") into Unicycler_ch
         file("*") into Unicycler_dump_ch
 
-    publishDir "${params.OUTDIR}unicycler_output", mode: 'copy', pattern: '*'
+    publishDir "${params.OUTDIR}unicycler_output/${base}/", mode: 'copy', pattern: '*'
         
     script:
     """
     #!/bin/bash
 
-    /usr/local/bin/unicycler -1 ${base}_matched_r1.fastq.gz -2 ${base}_matched_r2.fastq.gz -o ./ -t ${task.cpus}
+    /usr/local/bin/unicycler -1 ${base}_deduped_r1.fastq -2 ${base}_deduped_r2.fastq -o ./ -t ${task.cpus}
 
     """
 }
@@ -328,7 +333,7 @@ process remapReads {
 
     input:
         tuple val(base),file("${base}_consensus.fasta") from Consensus_ch
-        tuple val(base),file("${base}_matched_r1.fastq.gz"), file("${base}_matched_r2.fastq.gz") from Matched_cat_reads_ch2
+        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads_ch2
     output:
         tuple val(base),file("${base}_remapped.sorted.bam") into Remapped_bam_ch
 
@@ -337,7 +342,7 @@ process remapReads {
     script:
     """
     /usr/local/miniconda/bin/bowtie2-build -q ${base}_consensus.fasta ${base}_aligned_scaffolds_NC_021508
-    /usr/local/miniconda/bin/bowtie2 -x ${base}_aligned_scaffolds_NC_021508 -1 ${base}_matched_r1.fastq.gz -2 ${base}_matched_r2.fastq.gz -p ${task.cpus} | /usr/src/samtools-1.9/samtools view -bS - > ${base}_remapped.bam 
+    /usr/local/miniconda/bin/bowtie2 -x ${base}_aligned_scaffolds_NC_021508 -1 ${base}_deduped_r1.fastq -2 ${base}_deduped_r2.fastq -p ${task.cpus} | /usr/src/samtools-1.9/samtools view -bS - > ${base}_remapped.bam 
     /usr/src/samtools-1.9/samtools sort -o ${base}_remapped.sorted.bam ${base}_remapped.bam
     """
 }
