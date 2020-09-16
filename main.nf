@@ -323,6 +323,7 @@ process mergeAssemblyMapping {
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch2
 
     publishDir "${params.OUTDIR}merged_assembly_mapping_consensus", mode: 'copy', pattern: '*_consensus.fasta'
+    publishDir "${params.OUTDIR}scaffold_bams", mode: 'copy', pattern: '*.sorted.bam'
 
     script:
     """
