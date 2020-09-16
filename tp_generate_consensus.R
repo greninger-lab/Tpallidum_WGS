@@ -22,6 +22,8 @@ if(length(args)==0){
 }else{
   sampname=args[[1]]
 	ref=args[[2]]
+  coverage_cutoff=args[[3]]
+
 	# for(i in 1:length(args)){
 	# 	eval(parse(text=args[[i]]))
 	# 	print(args[[i]])
@@ -89,7 +91,8 @@ generate_consensus<-function(bamfname){
     
     #Edit to include a coverage threshold
     cm<-consensusMatrix(qseq_on_ref,as.prob=F,shift=start(gal)-1,width=seqlengths(gal))[c('A','C','G','T','N','-'),];
-    poor_cov<-which(colSums(cm)<10);
+    #poor_cov<-which(colSums(cm)<10);
+    poor_cov<-which(colSums(cm)<coverage_cutoff);
     cm<-apply(cm,2,function(x)x/sum(x));
     cm[,poor_cov]<-0;
     cm['N',poor_cov]<-1;

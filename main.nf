@@ -164,6 +164,8 @@ process mapUnmatchedReads {
         file REF_FASTAS_MASKED
     output:
         tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") into TPA_matched_reads
+        tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") into TPA_matched_reads2
+
         tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r1.fastq.gz") into TPA_unmatched_reads
     
     publishDir "${params.OUTDIR}TPA_filtered_fastqs", mode: 'copy', pattern: '*_matched_tpa*.fastq.gz'
@@ -279,7 +281,8 @@ process deNovoAssembly {
     maxRetries 1
 
     input:
-        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads
+//        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads
+        tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") from TPA_matched_reads2
     output:
         tuple val(base),file("assembly.gfa"),file("assembly.fasta") into Unicycler_ch
         file("*") into Unicycler_dump_ch
@@ -291,6 +294,8 @@ process deNovoAssembly {
     #!/bin/bash
 
     /usr/local/bin/unicycler -1 ${base}_deduped_r1.fastq -2 ${base}_deduped_r2.fastq -o ./ -t ${task.cpus}
+    cp assembly.gfa ${base}_assembly.gfa
+    cp assembly.fasta ${base}_assembly.fasta
 
     """
 }
@@ -339,6 +344,7 @@ process remapReads {
 
     publishDir "${params.OUTDIR}remapped_bwamem_bams", mode: 'copy', pattern: '*_remapped.sorted.bam'
 
+
     script:
     """
     /usr/local/miniconda/bin/bowtie2-build -q ${base}_consensus.fasta ${base}_aligned_scaffolds_NC_021508
@@ -362,7 +368,7 @@ process generateConsensus {
 
     script:
     """
-    Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}' \'NC_021508\'
+    Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}' \'NC_021508\' 6
     """
 
 }
