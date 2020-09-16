@@ -293,7 +293,7 @@ process deNovoAssembly {
     """
     #!/bin/bash
 
-    /usr/local/bin/unicycler -1 ${base}_deduped_r1.fastq -2 ${base}_deduped_r2.fastq -o ./ -t ${task.cpus}
+    /usr/local/bin/unicycler -1 ${base}_matched_tpa_r1.fastq.gz -2 ${base}_matched_tpa_r2.fastq.gz -o ./ -t ${task.cpus}
     cp assembly.gfa ${base}_assembly.gfa
     cp assembly.fasta ${base}_assembly.fasta
 
