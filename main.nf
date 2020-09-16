@@ -321,6 +321,7 @@ process mergeAssemblyMapping {
     output:
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch2
+        tuple val(base),file("*.sorted.bam") into Scaffold_bams_ch
 
     publishDir "${params.OUTDIR}merged_assembly_mapping_consensus", mode: 'copy', pattern: '*_consensus.fasta'
     publishDir "${params.OUTDIR}scaffold_bams", mode: 'copy', pattern: '*.sorted.bam'
