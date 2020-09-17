@@ -356,7 +356,7 @@ process remapReads {
     output:
         tuple val(base),file("${base}_remapped.sorted.bam") into Remapped_bam_ch
 
-    publishDir "${params.OUTDIR}remapped_bwamem_bams", mode: 'copy', pattern: '*_remapped.sorted.bam'
+    publishDir "${params.OUTDIR}remapped_bams", mode: 'copy', pattern: '*_remapped.sorted.bam'
 
 
     script:
