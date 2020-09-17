@@ -370,7 +370,8 @@ process generateConsensus {
 
     script:
     """
-    Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}' \'NC_021508\' 6
+    #Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}' \'NC_021508\' 6
+    Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}' \'NC_021508\'
     """
 
 }
