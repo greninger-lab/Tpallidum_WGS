@@ -293,7 +293,7 @@ process deNovoAssembly {
 //        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads
         tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") from TPA_matched_reads2
     output:
-        tuple val(base),file("assembly.gfa"),file("assembly.fasta") into Unicycler_ch
+        tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta") into Unicycler_ch
         file("*") into Unicycler_dump_ch
 
     publishDir "${params.OUTDIR}unicycler_output/${base}/", mode: 'copy', pattern: '*'
@@ -320,7 +320,7 @@ process mergeAssemblyMapping {
     maxRetries 1
 
     input:
-        tuple val(base),file("assembly.gfa"),file("assembly.fasta") from Unicycler_ch
+        tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta") from Unicycler_ch
         tuple val(base),file("${base}_firstmap_dedup.bam") from Sorted_dedup_bam_ch
         file(NC_021508)
         file(NC_021508_BWA1)
@@ -333,6 +333,7 @@ process mergeAssemblyMapping {
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch2
         tuple val(base),file("*.sorted.bam") into Scaffold_bams_ch
+        tuple val(base),file("*assembly*") into Assembly_ch
 
     publishDir "${params.OUTDIR}merged_assembly_mapping_consensus", mode: 'copy', pattern: '*_consensus.fasta'
     publishDir "${params.OUTDIR}scaffold_bams", mode: 'copy', pattern: '*.sorted.bam'
@@ -342,6 +343,9 @@ process mergeAssemblyMapping {
     #!/bin/bash
     echo ${base}
     ls -latr
+
+    cp ${base}_assembly.gfa assembly.gfa
+    cp ${base}_assembly.fasta assembly.fasta
 
     Rscript --vanilla ${TP_MAKE_SEQ} \'${base}\' \'NC_021508\'
     """
@@ -407,7 +411,7 @@ process annotateConsensus {
     script:
     """
     ls -latr
-
+ 
     #prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_finalconsensus.fasta
     prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_finalconsensus.fasta
 
