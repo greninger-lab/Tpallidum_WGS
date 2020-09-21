@@ -448,7 +448,7 @@ process generatePilonConsensus {
     container "quay.io/michellejlin/tpallidum_wgs"
 
     input:
-        tuple val(base),file("${base}_pilon_remapped.sorted.bam") into Pilon_bam_ch
+        tuple val(base),file("${base}_pilon_remapped.sorted.bam") from Pilon_bam_ch
         tuple val(base),file("${base}_pilon.fasta") from Pilon_fasta_ch2
         tuple val(base),file("${base}_firstmap_dedup.bam") from Sorted_dedup_bam_ch4
         file(TP_GENERATE_CONSENSUS)
