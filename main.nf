@@ -55,27 +55,27 @@ if (!params.OUTDIR.endsWith("/")){
 }
 
 // Reference files
-ADAPTERS = file("${baseDir}/All_adapters.fa")
+ADAPTERS = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/All_adapters.fa")
 //REF_FASTAS = file("${baseDir}/refs/TPA_refseqs.fasta")
-REF_FASTAS = file("${baseDir}/refs/TPA_rRNA_refs.fasta")
-REF_FASTAS_MASKED = file("${baseDir}/refs/TP_refs_rRNA_masked.fasta")
-REF_FASTAS_TRIM = file("${baseDir}/refs/TPA_refseqs_trim.fasta")
-NC_021508 = file("${baseDir}/refs/NC_021508.fasta")
+REF_FASTAS = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TPA_rRNA_refs.fasta")
+REF_FASTAS_MASKED = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TP_refs_rRNA_masked.fasta")
+REF_FASTAS_TRIM = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TPA_refseqs_trim.fasta")
+NC_021508 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta")
 // bowtie2 indexes
-NC_021508_1 = file("${baseDir}/refs/NC_021508.1.bt2")
-NC_021508_2 = file("${baseDir}/refs/NC_021508.2.bt2")
-NC_021508_3 = file("${baseDir}/refs/NC_021508.3.bt2")
-NC_021508_4 = file("${baseDir}/refs/NC_021508.4.bt2")
-NC_021508_5 = file("${baseDir}/refs/NC_021508.rev.1.bt2")
-NC_021508_6 = file("${baseDir}/refs/NC_021508.rev.2.bt2")
+NC_021508_1 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.1.bt2")
+NC_021508_2 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.2.bt2")
+NC_021508_3 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.3.bt2")
+NC_021508_4 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.4.bt2")
+NC_021508_5 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.rev.1.bt2")
+NC_021508_6 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.rev.2.bt2")
 // bwa indexes
-NC_021508_BWA1 = file("${baseDir}/refs/NC_021508.fasta.amb")
-NC_021508_BWA2 = file("${baseDir}/refs/NC_021508.fasta.ann")
-NC_021508_BWA3 = file("${baseDir}/refs/NC_021508.fasta.bwt")
-NC_021508_BWA4 = file("${baseDir}/refs/NC_021508.fasta.pac")
-NC_021508_BWA5 = file("${baseDir}/refs/NC_021508.fasta.sa")
+NC_021508_BWA1 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta.amb")
+NC_021508_BWA2 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta.ann")
+NC_021508_BWA3 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta.bwt")
+NC_021508_BWA4 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta.pac")
+NC_021508_BWA5 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta.sa")
 
-REF_GB = file("${baseDir}/refs/NC_021508.gb")
+REF_GB = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.gb")
 
 // Scripts
 TP_MAKE_SEQ = file("${baseDir}/tp_make_seq.R")
