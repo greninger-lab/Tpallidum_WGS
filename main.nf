@@ -119,6 +119,7 @@ process trimReads {
     """
     #!/bin/bash
 
+    ls -latr
     trimmomatic PE -threads ${task.cpus} ${R1} ${R2} ${base}.R1.paired.fastq.gz ${base}.R1.unpaired.fastq.gz ${base}.R2.paired.fastq.gz ${base}.R2.unpaired.fastq.gz \
     ILLUMINACLIP:${ADAPTERS}:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:20
 
@@ -145,6 +146,8 @@ process filterTp {
     script:
     """
     #!/bin/bash
+
+    ls -latr
     echo "Filtering trimmed reads of ${base} against TPA rRNA reference..."
     /bbmap/bbduk.sh in1='${base}.R1.paired.fastq.gz' in2='${base}.R2.paired.fastq.gz' out1='${base}_unmatched_rRNA_r1.fastq.gz' out2='${base}_unmatched_rRNA_r2.fastq.gz' outm1='${base}_matched_rRNA_r1.fastq.gz' outm2='${base}_matched_rRNA_r2.fastq.gz' ref=${REF_FASTAS} k=31 hdist=1 mcf=0.98 rieb=f stats='${base}_stats_tp.txt' overwrite=TRUE t=16 -Xmx50g
 
@@ -173,6 +176,8 @@ process mapUnmatchedReads {
     script:
     """
     #!/bin/bash
+
+    ls -latr
     /bbmap/bbduk.sh in1='${base}_unmatched_rRNA_r1.fastq.gz' in2='${base}_unmatched_rRNA_r2.fastq.gz' out1='${base}_unmatched_tpa_r1.fastq.gz' out2='${base}_unmatched2_tpa_r2.fastq.gz' outm1='${base}_matched_tpa_r1.fastq.gz' outm2='${base}_matched_tpa_r2.fastq.gz' ref=${REF_FASTAS_MASKED} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=14 -Xmx105g
 
     """
@@ -205,6 +210,7 @@ process mapReads {
     """
     #!/bin/bash
 
+    ls -latr
     echo "Concatenating TPA and rRNA reads for ${base}..."
     cat ${base}_matched_tpa_r1.fastq.gz ${base}_matched_rRNA_r1.fastq.gz > ${base}_matched_r1.fastq.gz
     cat ${base}_matched_tpa_r2.fastq.gz ${base}_matched_rRNA_r2.fastq.gz > ${base}_matched_r2.fastq.gz
@@ -224,6 +230,7 @@ process samToBam {
     """
     #!/bin/bash
 
+    ls -latr
     /usr/local/bin/samtools view -bS ${base}.sam > ${base}.bam
     /usr/local/bin/samtools sort -o ${base}_firstmap.sorted.bam ${base}.bam
     """
@@ -249,6 +256,7 @@ process removeDuplicates{
     """
     #!/bin/bash
 
+    ls -latr
     /usr/local/bin/picard MarkDuplicates INPUT=${base}_firstmap.sorted.bam OUTPUT=${base}_firstmap_dedup.bam METRICS_FILE=${base}_metrics.txt REMOVE_DUPLICATES=true VALIDATION_STRINGENCY=SILENT
     /usr/local/bin/picard SamToFastq I=${base}_firstmap_dedup.bam FASTQ=${base}_deduped_r1.fastq SECOND_END_FASTQ=${base}_deduped_r2.fastq VALIDATION_STRINGENCY=SILENT
     """
@@ -269,6 +277,7 @@ process callVariants {
     """
     #!/bin/bash
 
+    ls -latr
     /usr/local/bin/freebayes -f ${NC_021508} -p 1 ${base}_firstmap_dedup.bam -v ${base}.vcf
     """
 }
@@ -284,7 +293,7 @@ process deNovoAssembly {
 //        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads
         tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz") from TPA_matched_reads2
     output:
-        tuple val(base),file("assembly.gfa"),file("assembly.fasta") into Unicycler_ch
+        tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta") into Unicycler_ch
         file("*") into Unicycler_dump_ch
 
     publishDir "${params.OUTDIR}unicycler_output/${base}/", mode: 'copy', pattern: '*'
@@ -292,6 +301,8 @@ process deNovoAssembly {
     script:
     """
     #!/bin/bash
+
+    ls -latr
 
     /usr/local/bin/unicycler -1 ${base}_matched_tpa_r1.fastq.gz -2 ${base}_matched_tpa_r2.fastq.gz -o ./ -t ${task.cpus}
     cp assembly.gfa ${base}_assembly.gfa
@@ -309,7 +320,7 @@ process mergeAssemblyMapping {
     maxRetries 1
 
     input:
-        tuple val(base),file("assembly.gfa"),file("assembly.fasta") from Unicycler_ch
+        tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta") from Unicycler_ch
         tuple val(base),file("${base}_firstmap_dedup.bam") from Sorted_dedup_bam_ch
         file(NC_021508)
         file(NC_021508_BWA1)
@@ -322,6 +333,7 @@ process mergeAssemblyMapping {
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch
         tuple val(base),file("${base}_consensus.fasta") into Consensus_ch2
         tuple val(base),file("*.sorted.bam") into Scaffold_bams_ch
+        tuple val(base),file("*assembly*") into Assembly_ch
 
     publishDir "${params.OUTDIR}merged_assembly_mapping_consensus", mode: 'copy', pattern: '*_consensus.fasta'
     publishDir "${params.OUTDIR}scaffold_bams", mode: 'copy', pattern: '*.sorted.bam'
@@ -330,6 +342,10 @@ process mergeAssemblyMapping {
     """
     #!/bin/bash
     echo ${base}
+    ls -latr
+
+    cp ${base}_assembly.gfa assembly.gfa
+    cp ${base}_assembly.fasta assembly.fasta
 
     Rscript --vanilla ${TP_MAKE_SEQ} \'${base}\' \'NC_021508\'
     """
@@ -344,11 +360,13 @@ process remapReads {
     output:
         tuple val(base),file("${base}_remapped.sorted.bam") into Remapped_bam_ch
 
-    publishDir "${params.OUTDIR}remapped_bwamem_bams", mode: 'copy', pattern: '*_remapped.sorted.bam'
+    publishDir "${params.OUTDIR}remapped_bams", mode: 'copy', pattern: '*_remapped.sorted.bam'
 
 
     script:
     """
+    ls -latr
+
     /usr/local/miniconda/bin/bowtie2-build -q ${base}_consensus.fasta ${base}_aligned_scaffolds_NC_021508
     /usr/local/miniconda/bin/bowtie2 -x ${base}_aligned_scaffolds_NC_021508 -1 ${base}_deduped_r1.fastq -2 ${base}_deduped_r2.fastq -p ${task.cpus} | /usr/src/samtools-1.9/samtools view -bS - > ${base}_remapped.bam 
     /usr/src/samtools-1.9/samtools sort -o ${base}_remapped.sorted.bam ${base}_remapped.bam
@@ -370,7 +388,9 @@ process generateConsensus {
 
     script:
     """
-    Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}' \'NC_021508\' 6
+    ls -latr
+
+    Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}' \'NC_021508\'
     """
 
 }
@@ -390,6 +410,8 @@ process annotateConsensus {
 
     script:
     """
+    ls -latr
+ 
     #prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_finalconsensus.fasta
     prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_finalconsensus.fasta
 
