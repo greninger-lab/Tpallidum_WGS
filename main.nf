@@ -246,9 +246,12 @@ process removeDuplicates{
         tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch
         tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch2
         tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch3
+        tuple val(base),file("${base}_firstmap_dedup.bam") into Sorted_dedup_bam_ch4
         
         tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") into Deduped_reads
         tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") into Deduped_reads_ch2
+        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") into Deduped_reads_ch3
+
     
     publishDir "${params.OUTDIR}deduped_bams", mode: 'copy', pattern: '*_firstmap_dedup.bam'
 
@@ -359,6 +362,7 @@ process remapReads {
         tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads_ch2
     output:
         tuple val(base),file("${base}_remapped.sorted.bam") into Remapped_bam_ch
+        tuple val(base),file("${base}_remapped.sorted.bam"),file("${base}_remapped.sorted.bam.bai"),file("${base}_consensus.fasta") into Pilon_ch
 
     publishDir "${params.OUTDIR}remapped_bams", mode: 'copy', pattern: '*_remapped.sorted.bam'
 
@@ -370,8 +374,53 @@ process remapReads {
     /usr/local/miniconda/bin/bowtie2-build -q ${base}_consensus.fasta ${base}_aligned_scaffolds_NC_021508
     /usr/local/miniconda/bin/bowtie2 -x ${base}_aligned_scaffolds_NC_021508 -1 ${base}_deduped_r1.fastq -2 ${base}_deduped_r2.fastq -p ${task.cpus} | /usr/src/samtools-1.9/samtools view -bS - > ${base}_remapped.bam 
     /usr/src/samtools-1.9/samtools sort -o ${base}_remapped.sorted.bam ${base}_remapped.bam
+
+    /usr/src/samtools-1.9/samtools index -b ${base}_remapped.sorted.bam ${base}_remapped.sorted.bam.bai
     """
 }
+
+process pilonPolishing {
+    container "staphb/pilon"
+
+    input: 
+        tuple val(base),file("${base}_remapped.sorted.bam"),file("${base}_remapped.sorted.bam.bai"),file("${base}_consensus.fasta") from Pilon_ch
+    output:
+        tuple val(base),file("${base}_pilon.fasta") into Pilon_fasta_ch
+        tuple val(base),file("${base}_pilon.fasta") into Pilon_fasta_ch2
+    
+    publishDir "${params.OUTDIR}pilon", mode: 'copy', pattern: '*'
+
+    script:
+    """
+    ls -latr
+
+    /pilon/pilon --genome ${base}_consensus.fasta --frags ${base}_remapped.sorted.bam --output ${base}_pilon --vcf --changes
+    """
+}
+
+process remapPilon {
+    container "quay.io/michellejlin/tpallidum_wgs"
+
+    input:
+        tuple val(base),file("${base}_pilon.fasta") from Pilon_fasta_ch
+        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads_ch3
+    output:
+        tuple val(base),file("${base}_pilon_remapped.sorted.bam") into Pilon_bam_ch
+
+    publishDir "${params.OUTDIR}remapped_pilon_bams", mode: 'copy', pattern: '*pilon*'
+
+    script:
+    """
+    ls -latr
+
+    /usr/local/miniconda/bin/bowtie2-build -q ${base}_pilon_consensus.fasta ${base}_pilon_aligned_scaffolds_NC_021508
+    /usr/local/miniconda/bin/bowtie2 -x ${base}_pilon_aligned_scaffolds_NC_021508 -1 ${base}_deduped_r1.fastq -2 ${base}_deduped_r2.fastq -p ${task.cpus} | /usr/src/samtools-1.9/samtools view -bS - > ${base}_pilon_remapped.bam 
+    /usr/src/samtools-1.9/samtools sort -o ${base}_pilon_remapped.sorted.bam ${base}_pilon_remapped.bam
+
+    /usr/src/samtools-1.9/samtools index -b ${base}_pilon_remapped.sorted.bam ${base}_pilon_remapped.sorted.bam.bai
+    """
+}
+
 
 process generateConsensus {
     container "quay.io/michellejlin/tpallidum_wgs"
@@ -395,6 +444,27 @@ process generateConsensus {
 
 }
 
+process generatePilonConsensus {
+    container "quay.io/michellejlin/tpallidum_wgs"
+
+    input:
+        tuple val(base),file("${base}_pilon_remapped.sorted.bam") into Pilon_bam_ch
+        tuple val(base),file("${base}_pilon.fasta") from Pilon_fasta_ch2
+        tuple val(base),file("${base}_firstmap_dedup.bam") from Sorted_dedup_bam_ch4
+        file(TP_GENERATE_CONSENSUS)
+    output:
+        tuple val(base),file("${base}_pilon_finalconsensus.fasta"),file("${base}_pilon_mappingstats.csv") into Prokka_pilon_consensus_ch
+
+    publishDir "${params.OUTDIR}finalconsensus", mode: 'copy', pattern: '*_finalconsensus.fasta'
+
+    script:
+    """
+    ls -latr
+
+    Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}_pilon' \'NC_021508\'
+    """
+}
+
 // Annotate final consensus with prokka
 process annotateConsensus {
     container "quay.io/biocontainers/prokka:1.14.6--pl526_0"
@@ -414,6 +484,28 @@ process annotateConsensus {
  
     #prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_finalconsensus.fasta
     prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_finalconsensus.fasta
+
+    """
+}
+
+// Annotate final consensus with prokka
+process annotatePilonConsensus {
+    container "quay.io/biocontainers/prokka:1.14.6--pl526_0"
+
+    input:
+    tuple val(base),file("${base}_pilon_finalconsensus.fasta"),file("${base}_pilon_mappingstats.csv") from Prokka_pilon_consensus_ch
+    file(REF_GB)
+
+    output:
+        file("*") into Annotated_pilon_ch
+
+    publishDir "${params.OUTDIR}finalconsensus_pilon_prokka_annotations", mode: 'copy', pattern: '*'
+
+    script:
+    """
+    ls -latr
+ 
+    prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_pilon_finalconsensus.fasta
 
     """
 }

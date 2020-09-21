@@ -3,3 +3,4 @@
 .DS_Store
 .nextflow.log*
 .nextflow/*
+*params.json
