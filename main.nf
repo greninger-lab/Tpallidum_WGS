@@ -58,7 +58,8 @@ if (!params.OUTDIR.endsWith("/")){
 ADAPTERS = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/All_adapters.fa")
 //REF_FASTAS = file("${baseDir}/refs/TPA_refseqs.fasta")
 REF_FASTAS = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TPA_rRNA_refs.fasta")
-REF_FASTAS_MASKED = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TP_refs_rRNA_masked.fasta")
+//REF_FASTAS_MASKED = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/Tp_refs_rRNA_masked.fasta")
+REF_FASTAS_MASKED = file("${baseDir}/refs/Tp_refs_rRNA_masked.fasta")
 REF_FASTAS_TRIM = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TPA_refseqs_trim.fasta")
 NC_021508 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta")
 // bowtie2 indexes
