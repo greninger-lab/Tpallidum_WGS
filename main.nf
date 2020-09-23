@@ -54,7 +54,9 @@ if (!params.OUTDIR.endsWith("/")){
    params.OUTDIR = "${params.OUTDIR}/"
 }
 
+// 
 // Reference files
+//  
 ADAPTERS = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/All_adapters.fa")
 //REF_FASTAS = file("${baseDir}/refs/TPA_refseqs.fasta")
 REF_FASTAS = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TPA_rRNA_refs.fasta")
@@ -127,7 +129,7 @@ process trimReads {
     """
 }
 
-// Use bbduk to filter reads that match Tp genomes
+// Use bbduk to filter reads that match rRNA more stringently
 process filterTp {
     container "staphb/bbtools:latest"
 
@@ -184,6 +186,7 @@ process mapUnmatchedReads {
     """
 }
 
+// Take matched reads and map to NC_021508 reference
 process mapReads {
     container "quay.io/biocontainers/bowtie2:2.4.1--py37h8270d21_3"
 
@@ -219,6 +222,7 @@ process mapReads {
     """
 }
 
+// Convert sam to bam
 process samToBam {
     container "quay.io/biocontainers/samtools:1.6--h9dace67_6"
 
@@ -238,6 +242,7 @@ process samToBam {
 
 }
 
+// Use Picard to remove duplicates and convert bam back to fastq for downstream remapping
 process removeDuplicates{
     container "quay.io/biocontainers/picard:2.23.3--0"
 
@@ -266,6 +271,7 @@ process removeDuplicates{
     """
 }
 
+// Call variants with Freebayes
 process callVariants {
     container "quay.io/biocontainers/freebayes:1.3.2--py37h26878c9_2"
 
@@ -286,6 +292,7 @@ process callVariants {
     """
 }
 
+// De novo assemble matched reads with Unicycler 
 process deNovoAssembly {
     container "quay.io/biocontainers/unicycler:0.4.4--py37h13b99d1_3"
 
@@ -414,7 +421,7 @@ process remapPilon {
     """
     ls -latr
 
-    /usr/local/miniconda/bin/bowtie2-build -q ${base}_pilon_consensus.fasta ${base}_pilon_aligned_scaffolds_NC_021508
+    /usr/local/miniconda/bin/bowtie2-build -q ${base}_pilon.fasta ${base}_pilon_aligned_scaffolds_NC_021508
     /usr/local/miniconda/bin/bowtie2 -x ${base}_pilon_aligned_scaffolds_NC_021508 -1 ${base}_deduped_r1.fastq -2 ${base}_deduped_r2.fastq -p ${task.cpus} | /usr/src/samtools-1.9/samtools view -bS - > ${base}_pilon_remapped.bam 
     /usr/src/samtools-1.9/samtools sort -o ${base}_pilon_remapped.sorted.bam ${base}_pilon_remapped.bam
 
