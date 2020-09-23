@@ -467,8 +467,9 @@ process generatePilonConsensus {
 
     script:
     """
-    ls -latr
+    cp ${base}_firstmap_dedup.bam ${base}_pilon_firstmap_dedup.bam
 
+    ls -latr    
     Rscript --vanilla ${TP_GENERATE_CONSENSUS} \'${base}_pilon' \'NC_021508\'
     """
 }
