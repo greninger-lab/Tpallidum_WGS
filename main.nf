@@ -371,8 +371,10 @@ process remapReads {
     output:
         tuple val(base),file("${base}_remapped.sorted.bam") into Remapped_bam_ch
         tuple val(base),file("${base}_remapped.sorted.bam"),file("${base}_remapped.sorted.bam.bai"),file("${base}_consensus.fasta") into Pilon_ch
+        tuple val(base),file("*") into Remap_reads_all_ch
 
     publishDir "${params.OUTDIR}remapped_bams", mode: 'copy', pattern: '*_remapped.sorted.bam'
+    publishDir "${params.OUTDIR}remapped_bams/${base}/", mode: 'copy', pattern: '*'
 
 
     script:
@@ -414,8 +416,11 @@ process remapPilon {
         tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads_ch3
     output:
         tuple val(base),file("${base}_pilon_remapped.sorted.bam") into Pilon_bam_ch
+        tuple val(base),file("*") into Remap_pilon_all_ch
 
-    publishDir "${params.OUTDIR}remapped_pilon_bams", mode: 'copy', pattern: '*pilon*'
+    publishDir "${params.OUTDIR}remapped_pilon_bams", mode: 'copy', pattern: '*pilon_remapped.sorted.bam'
+    publishDir "${params.OUTDIR}remapped_pilon_bams/${base}", mode: 'copy', pattern: '*'
+    
 
     script:
     """
