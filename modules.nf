@@ -155,6 +155,7 @@ process removeDuplicates{
         tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq")// into Deduped_reads_ch2
         tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq")// into Deduped_reads_ch3
 
+        tuple val(base),file("${base}_firstmap_dedup.bam")// into Sorted_dedup_bam_ch5
     
     publishDir "${params.OUTDIR}deduped_bams", mode: 'copy', pattern: '*_firstmap_dedup.bam'
     publishDir ("${params.OUTDIR}deduped_fastqs", mode: 'copy', pattern: '*.fastq')
@@ -194,16 +195,20 @@ process callVariants {
 process deNovoAssembly {
     container "quay.io/biocontainers/unicycler:0.4.4--py37h13b99d1_3"
 
-    // Retry on fail at most three times 
-    errorStrategy 'retry'
+    // Here we ignore errors that hopefully are because there aren't enough target reads to de novo assemble.
+    // Instead, we take those files into a different process for pilon on the first mapped bam and consensus generation.
+    errorStrategy 'ignore' 
     maxRetries 1
 
     input:
 //        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads
         tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz")// from TPA_matched_reads2
+        tuple val(base),file("${base}_firstmap_dedup.bam")// from Sorted_dedup_bam_ch5
+    
     output:
         tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta")// into Unicycler_ch
         file("*")// into Unicycler_dump_ch
+        tuple val(base),env(DE_NOVO_ASSEMBLED),file("${base}_firstmap_dedup.bam") // into PilonDeNovo_ch
 
     publishDir "${params.OUTDIR}unicycler_output/${base}/", mode: 'copy', pattern: '*'
         
@@ -214,8 +219,17 @@ process deNovoAssembly {
     ls -latr
 
     /usr/local/bin/unicycler -1 ${base}_matched_tpa_r1.fastq.gz -2 ${base}_matched_tpa_r2.fastq.gz -o ./ -t ${task.cpus}
-    cp assembly.gfa ${base}_assembly.gfa
-    cp assembly.fasta ${base}_assembly.fasta
+    
+    # Check to see if sample de novo assembled
+    if [ -f assembly.gfa ]; then 
+        cp assembly.gfa ${base}_assembly.gfa
+        cp assembly.fasta ${base}_assembly.fasta
+        DE_NOVO_ASSEMBLED="true"
+        rm *.bam
+    else
+        echo "${base} did not de novo assemble."
+        DE_NOVO_ASSEMBLED="false"
+    fi
 
     """
 }
@@ -419,5 +433,27 @@ process annotatePilonConsensus {
  
     prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_pilon_finalconsensus.fasta
 
+    """
+}
+
+// Pilon polish for samples that failed to de novo assemble
+process pilonPolishing_noDeNovo {
+    container "staphb/pilon"
+
+    input: 
+        tuple val(base),env(DE_NOVO_ASSEMBLED),file("${base}_firstmap_dedup.bam") // from PilonDeNovo_ch
+    output:
+        tuple val(base),file("${base}_pilon.fasta")
+    
+    when: 
+    DE_NOVO_ASSEMBLED == "false"
+
+    publishDir "${params.OUTDIR}pilon_no_de_novo", mode: 'copy', pattern: '*'
+
+    script:
+    """
+    ls -latr
+
+    /pilon/pilon --genome ${base}_consensus.fasta --frags ${base}_firstmap_dedup.bam --output ${base}_pilon --vcf --changes
     """
 }

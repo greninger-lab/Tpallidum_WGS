@@ -117,6 +117,7 @@ include generateConsensus from './modules'
 include generatePilonConsensus from './modules'
 include annotateConsensus from './modules'
 include annotatePilonConsensus from './modules'
+include pilonPolishing_noDeNovo from './modules'
 
 
 ////////////////////////////////////////////////////////
@@ -169,7 +170,8 @@ workflow {
         NC_021508
     )
     deNovoAssembly (
-        mapUnmatchedReads.out[1]
+        mapUnmatchedReads.out[1],
+        removeDuplicates.out[3]
     )
     mergeAssemblyMapping (
         deNovoAssembly.out[0].groupTuple()
@@ -224,5 +226,8 @@ workflow {
     annotatePilonConsensus (
         generatePilonConsensus.out,
         REF_GB
+    )
+    pilonPolishing_noDeNovo (
+        deNovoAssembly.out[2]
     )
 }
