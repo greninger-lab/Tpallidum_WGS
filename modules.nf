@@ -39,6 +39,7 @@ process filterTp {
     output:
         tuple val(base),file("${base}_matched_rRNA_r1.fastq.gz"), file("${base}_matched_rRNA_r2.fastq.gz")// into Trimmed_filtered_reads_ch1
         tuple val(base),file("${base}_unmatched_rRNA_r1.fastq.gz"), file("${base}_unmatched_rRNA_r2.fastq.gz")// into Trimmed_unmatched_reads
+        tuple val(base),file("")
     
     publishDir "${params.OUTDIR}rRNA_filtered_fastqs", mode: 'copy', pattern: '*matched_rRNA*.fastq.gz'
 
@@ -230,7 +231,7 @@ process deNovoAssembly {
         DE_NOVO_ASSEMBLED="false"
     fi
 
-    echo $DE_NOVO_ASSEMBLED
+    echo \$DE_NOVO_ASSEMBLED
 
     """
 }
