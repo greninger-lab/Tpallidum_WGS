@@ -117,6 +117,7 @@ include generateConsensus from './modules'
 include generatePilonConsensus from './modules'
 include annotateConsensus from './modules'
 include annotatePilonConsensus from './modules'
+include indexBam_noDeNovo from './modules'
 include pilonPolishing_noDeNovo from './modules'
 
 
@@ -227,7 +228,10 @@ workflow {
         generatePilonConsensus.out,
         REF_GB
     )
-    pilonPolishing_noDeNovo (
+    indexBam_noDeNovo (
         deNovoAssembly.out[2]
+    )
+    pilonPolishing_noDeNovo (
+        indexBam_noDeNovo.out[0]
     )
 }

@@ -230,6 +230,8 @@ process deNovoAssembly {
         DE_NOVO_ASSEMBLED="false"
     fi
 
+    echo $DE_NOVO_ASSEMBLED
+
     """
 }
 
@@ -435,17 +437,35 @@ process annotatePilonConsensus {
     """
 }
 
+// Index bam for pilon polishing
+process indexBam_noDeNovo {
+    container "quay.io/michellejlin/tpallidum_wgs"
+
+    input: 
+        tuple val(base),env(DE_NOVO_ASSEMBLED),file("${base}_firstmap_dedup.bam") // from PilonDeNovo_ch
+    output:
+        tuple val(base),file("${base}_firstmap_dedup.bam"),file("${base}_firstmap_dedup.bam.bai")// into Pilon_nodenovo_ch
+    
+    when: 
+    DE_NOVO_ASSEMBLED == "false"
+
+    script:
+    """
+    ls -latr
+
+    /usr/src/samtools-1.9/samtools index -b ${base}_firstmap_dedup.bam ${base}_firstmap_dedup.bam.bai
+    """
+}
+
 // Pilon polish for samples that failed to de novo assemble
 process pilonPolishing_noDeNovo {
     container "staphb/pilon"
 
     input: 
-        tuple val(base),env(DE_NOVO_ASSEMBLED),file("${base}_firstmap_dedup.bam") // from PilonDeNovo_ch
+        tuple val(base),file("${base}_firstmap_dedup.bam"),file("${base}_firstmap_dedup.bam.bai")// from Pilon_nodenovo_ch
+
     output:
         tuple val(base),file("${base}_pilon.fasta")
-    
-    when: 
-    DE_NOVO_ASSEMBLED == "false"
 
     publishDir "${params.OUTDIR}pilon_no_de_novo", mode: 'copy', pattern: '*'
 
