@@ -206,9 +206,9 @@ process deNovoAssembly {
         tuple val(base),file("${base}_firstmap_dedup.bam")// from Sorted_dedup_bam_ch5
     
     output:
-        tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta")// into Unicycler_ch
+        tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta") optional true // into Unicycler_ch
         file("*")// into Unicycler_dump_ch
-        tuple val(base),env(DE_NOVO_ASSEMBLED),file("${base}_firstmap_dedup.bam") // into PilonDeNovo_ch
+        tuple val(base),env(DE_NOVO_ASSEMBLED),file("${base}_firstmap_dedup.bam") optional true // into PilonDeNovo_ch
 
     publishDir "${params.OUTDIR}unicycler_output/${base}/", mode: 'copy', pattern: '*'
         
@@ -225,7 +225,6 @@ process deNovoAssembly {
         cp assembly.gfa ${base}_assembly.gfa
         cp assembly.fasta ${base}_assembly.fasta
         DE_NOVO_ASSEMBLED="true"
-        rm *.bam
     else
         echo "${base} did not de novo assemble."
         DE_NOVO_ASSEMBLED="false"
