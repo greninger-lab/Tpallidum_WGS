@@ -207,7 +207,7 @@ process deNovoAssembly {
         tuple val(base),file("${base}_firstmap_dedup.bam")// from Sorted_dedup_bam_ch5
     
     output:
-        tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta") optional true // into Unicycler_ch
+        tuple val(base),env(DE_NOVO_ASSEMBLED),file("${base}_assembly.gfa"),file("${base}_assembly.fasta") optional true // into Unicycler_ch
         file("*")// into Unicycler_dump_ch
         tuple val(base),env(DE_NOVO_ASSEMBLED),file("${base}_firstmap_dedup.bam") optional true // into PilonDeNovo_ch
 
@@ -245,7 +245,7 @@ process mergeAssemblyMapping {
     maxRetries 1
 
     input:
-        tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta"),file("${base}_firstmap_dedup.bam")// from Unicycler_ch
+        tuple val(base),env(DE_NOVO_ASSEMBLED),file("${base}_assembly.gfa"),file("${base}_assembly.fasta"),file("${base}_firstmap_dedup.bam")// from Unicycler_ch
         //tuple val(base),file("${base}_firstmap_dedup.bam")// from Sorted_dedup_bam_ch
         file(NC_021508)
         file(NC_021508_BWA1)
@@ -259,6 +259,9 @@ process mergeAssemblyMapping {
         tuple val(base),file("${base}_consensus.fasta")// into Consensus_ch2
         tuple val(base),file("*.sorted.bam")// into Scaffold_bams_ch
         tuple val(base),file("*assembly*")// into Assembly_ch
+
+    when: 
+    DE_NOVO_ASSEMBLED == "false"
 
     publishDir "${params.OUTDIR}merged_assembly_mapping_consensus", mode: 'copy', pattern: '*_consensus.fasta'
     publishDir "${params.OUTDIR}scaffold_bams", mode: 'copy', pattern: '*.sorted.bam'
