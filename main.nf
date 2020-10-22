@@ -13,8 +13,7 @@ def helpMessage() {
                         ./ can be used for current directory.
                         Fastqs should all be gzipped. This can be done with the command gzip *.fastq. [REQUIRED]
         --OUTDIR        Output directory. [REQUIRED]
-        --SINGLE_END    Optional flag for single end reads. By default, this pipeline does 
-                        paired-end reads.
+        --METADATA_FILE Metadata file.
         
     """.stripIndent()
 }
@@ -37,14 +36,13 @@ if (params.help){
 params.INPUT = false
 params.OUTDIR= false
 params.SINGLE_END = false
-params.METADATA = false
+params.METADATA_FILE = false
 // Makes sure you have metadata file
-if (params.METADATA == false) {
-    println("Must provide metadata file input as .csv format with three columns: \
-    SampleName, Illumina, PacBio. Use --METADATA flag.")
+if (params.METADATA_FILE == false) {
+    println("Must provide metadata file input as .csv format.")
     exit(1)
 } else{
-    METADATA_FILE = file(params.METADATA)
+    METADATA_FILE = file(params.METADATA_FILE)
 }
 
 // if INPUT not set
