@@ -37,6 +37,15 @@ if (params.help){
 params.INPUT = false
 params.OUTDIR= false
 params.SINGLE_END = false
+params.METADATA = false
+// Makes sure you have metadata file
+if (params.METADATA == false) {
+    println("Must provide metadata file input as .csv format with three columns: \
+    SampleName, Illumina, PacBio. Use --METADATA flag.")
+    exit(1)
+} else{
+    METADATA_FILE = file(params.METADATA)
+}
 
 // if INPUT not set
 if (params.INPUT == false) {
@@ -86,7 +95,6 @@ REF_GB = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/N
 // Scripts
 TP_MAKE_SEQ = file("${baseDir}/tp_make_seq.R")
 TP_GENERATE_CONSENSUS = file("${baseDir}/tp_generate_consensus.R")
-
 
 // Read in fastq pairs into input_read_ch
 if(params.SINGLE_END == false){ 
