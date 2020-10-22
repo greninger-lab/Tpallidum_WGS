@@ -135,7 +135,6 @@ include annotatePilonConsensus from './modules'
 
 workflow {
     input_read_ch = Channel
-        .ifEmpty { error "Cannot find any FASTQ pairs in ${params.INPUT} ending with .gz" }
         .fromPath(METADATA_FILE)
         .splitCsv(header:true)
         .map{ row-> tuple(row.Sample, file(row.Rr1), file(row.Rr2), file(row.Rr300_R1), file(row.Rr300_R2)) }
