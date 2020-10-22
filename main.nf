@@ -93,7 +93,7 @@ if(params.SINGLE_END == false){
     input_read_ch = Channel
         .fromPath(METADATA_FILE)
         .splitCsv(header:true)
-        .map{ row-> tuple(row.Sample, file(row.Rr1), file(row.Rr2), file(row.Rr300_R1), file(row.Rr300_R2) }
+        .map{ row-> tuple(row.Sample, file(row.Rr1), file(row.Rr2), file(row.Rr300_R1), file(row.Rr300_R2)) }
 }
 
 
