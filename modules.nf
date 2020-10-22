@@ -7,7 +7,7 @@ process trimReads {
     maxRetries 1
 
     input:
-        tuple val(base), file(R1), file(R2), file(300_R1), file(300_R2) // from input_read_ch
+        tuple val(base), file(Rr1), file(Rr2), file(Rr300_R1), file(Rr300_R2) // from input_read_ch
         file ADAPTERS
     output: 
         tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz"), file("${base}_300.R1.paired.fastq.gz"), file("${base}_300.R2.paired.fastq.gz"), file("${base}_300.R1.unpaired.fastq.gz") // into Trim_out_ch
@@ -19,10 +19,10 @@ process trimReads {
     #!/bin/bash
 
     ls -latr
-    trimmomatic PE -threads ${task.cpus} ${R1} ${R2} ${base}.R1.paired.fastq.gz ${base}.R1.unpaired.fastq.gz ${base}.R2.paired.fastq.gz ${base}.R2.unpaired.fastq.gz \
+    trimmomatic PE -threads ${task.cpus} ${Rr1} ${Rr2} ${base}.R1.paired.fastq.gz ${base}.R1.unpaired.fastq.gz ${base}.R2.paired.fastq.gz ${base}.R2.unpaired.fastq.gz \
     ILLUMINACLIP:${ADAPTERS}:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:20
 
-    trimmomatic PE -threads ${task.cpus} ${300_R1} ${300_R2} ${base}_300.R1.paired.fastq.gz ${base}_300.R1.unpaired.fastq.gz ${base}_300.R2.paired.fastq.gz ${base}_300.R2.unpaired.fastq.gz \
+    trimmomatic PE -threads ${task.cpus} ${Rr300_R1} ${Rr300_R2} ${base}_300.R1.paired.fastq.gz ${base}_300.R1.unpaired.fastq.gz ${base}_300.R2.paired.fastq.gz ${base}_300.R2.unpaired.fastq.gz \
     ILLUMINACLIP:${ADAPTERS}:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:20
 
     """

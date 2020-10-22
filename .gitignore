@@ -5,3 +5,4 @@
 .nextflow/*
 *params.json
 trace*
+.nextflow.log*
