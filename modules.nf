@@ -225,7 +225,9 @@ process deNovoAssembly {
 
     ls -latr
 
-    /usr/local/bin/unicycler --pe1-1 ${base}_matched_tpa_r1.fastq.gz --pe1-2 ${base}_matched_tpa_r2.fastq.gz --pe2-1 ${base}_300_matched_tpa_r1.fastq.gz --pe2-2 ${base}_300_matched_tpa_r2.fastq.gz --s2 ${base}_300_matched_tpa_r1.fastq.gz -o ./ -t ${task.cpus}
+    #/usr/local/bin/unicycler --pe1-1 ${base}_matched_tpa_r1.fastq.gz --pe1-2 ${base}_matched_tpa_r2.fastq.gz --pe2-1 ${base}_300_matched_tpa_r1.fastq.gz --pe2-2 ${base}_300_matched_tpa_r2.fastq.gz --s2 ${base}_300_matched_tpa_r1.fastq.gz -o ./ -t ${task.cpus}
+    /usr/local/bin/unicycler -1 ${base}_matched_tpa_r1.fastq.gz,${base}_300_matched_tpa_r1.fastq.gz -2 ${base}_matched_tpa_r2.fastq.gz,${base}_300_matched_tpa_r2.fastq.gz -s ${base}_300_matched_tpa_r1.fastq.gz -o ./ -t ${task.cpus}
+
     cp assembly.gfa ${base}_assembly.gfa
     cp assembly.fasta ${base}_assembly.fasta
 
