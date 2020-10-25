@@ -224,9 +224,12 @@ process deNovoAssembly {
     #!/bin/bash
 
     ls -latr
-
+    
+    cat ${base}_matched_tpa_r1.fastq.gz ${base}_300_matched_tpa_r1.fastq.gz > ${base}_cat_matched_tpa_r1.fastq.gz
+    cat ${base}_matched_tpa_r2.fastq.gz ${base}_300_matched_tpa_r2.fastq.gz > ${base}_cat_matched_tpa_r2.fastq.gz
     #/usr/local/bin/unicycler --pe1-1 ${base}_matched_tpa_r1.fastq.gz --pe1-2 ${base}_matched_tpa_r2.fastq.gz --pe2-1 ${base}_300_matched_tpa_r1.fastq.gz --pe2-2 ${base}_300_matched_tpa_r2.fastq.gz --s2 ${base}_300_matched_tpa_r1.fastq.gz -o ./ -t ${task.cpus}
-    /usr/local/bin/unicycler -1 ${base}_matched_tpa_r1.fastq.gz,${base}_300_matched_tpa_r1.fastq.gz -2 ${base}_matched_tpa_r2.fastq.gz,${base}_300_matched_tpa_r2.fastq.gz -s ${base}_300_matched_tpa_r1.fastq.gz -o ./ -t ${task.cpus}
+    #/usr/local/bin/unicycler -1 ${base}_matched_tpa_r1.fastq.gz,${base}_300_matched_tpa_r1.fastq.gz -2 ${base}_matched_tpa_r2.fastq.gz,${base}_300_matched_tpa_r2.fastq.gz -s ${base}_300_matched_tpa_r1.fastq.gz -o ./ -t ${task.cpus}
+    /usr/local/bin/unicycler -1 ${base}_cat matched_tpa_r1.fastq.gz -2 ${base}_cat_matched_tpa_r2.fastq.gz -s ${base}_300_matched_tpa_r1.fastq.gz -o ./ -t ${task.cpus}
 
     cp assembly.gfa ${base}_assembly.gfa
     cp assembly.fasta ${base}_assembly.fasta
