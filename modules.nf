@@ -127,7 +127,7 @@ process mapReads {
     cat ${base}_300_matched_tpa_r2.fastq.gz ${base}_300_matched_rRNA_r2.fastq.gz > ${base}_300_matched_r2.fastq.gz
     cat ${base}_300_matched_unpaired_tpa_r1.fastq.gz ${base}_300_matched_unpaired_rRNA_r1.fastq.gz > ${base}_300_matched_unpaired_r1.fastq.gz
 
-    bowtie2 -x NC_021508 -1 '${base}_matched_r1.fastq.gz, ${base}_300_matched_r1.fastq.gz' -2 '${base}_matched_r2.fastq.gz, ${base}_300_matched_r2.fastq.gz' -U '${base}_300_matched_unpaired_r1.fastq.gz' -p ${task.cpus} > ${base}.sam
+    bowtie2 -x NC_021508 -1 '${base}_matched_r1.fastq.gz,${base}_300_matched_r1.fastq.gz' -2 '${base}_matched_r2.fastq.gz,${base}_300_matched_r2.fastq.gz' -U '${base}_300_matched_unpaired_r1.fastq.gz' -p ${task.cpus} > ${base}.sam
     """
 }
 
