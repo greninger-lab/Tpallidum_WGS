@@ -18,10 +18,10 @@ JOB_QUEUE=covid19
 
 # Unique Name for this particular batch of samples
 # (no spaces, no special characters, keep it simple)
-SAMPLE_BATCH_NAME=headless_test
-INPUT="s3://covid19-input-data/tpallidum_wgs/mini_tp/isolated_fastq/Dublin41B/"
+SAMPLE_BATCH_NAME=minitp_extrafiltering
+INPUT="s3://covid19-input-data/tpallidum_wgs/mini_tp/"
 # Make sure the OUTDIR always ends with a '/'
-OUTDIR="s3://covid19-input-data/tpallidum_wgs/mini_tp/isolated_fastq/Dublin41B/output/"
+OUTDIR="s3://covid19-input-data/tpallidum_wgs/mini_tp/2020-11-20_actual_extra_filtering_output/"
 
 # GitHub repo to run
 WORKFLOW=michellejlin/Tpallidum_WGS
@@ -33,6 +33,7 @@ REF_FASTAS="s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TPA_
 REF_FASTAS_MASKED="s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TP_refs_rRNA_masked.fasta"
 REF_FASTAS_TRIM="s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/TPA_refseqs_trim.fasta"
 NC_021508="s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta"
+REPEAT_FILTER_FASTA="s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/repeat_filter_UPDATE.fasta"
 
 # bowtie2 indexes
 NC_021508_1="s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.1.bt2"
@@ -75,7 +76,8 @@ cat > ${SAMPLE_BATCH_NAME}.params.json << EOF
     "NC_021508_BWA2": "${NC_021508_BWA2}",
     "NC_021508_BWA3": "${NC_021508_BWA3}",
     "NC_021508_BWA4": "${NC_021508_BWA4}",
-    "NC_021508_BWA5": "${NC_021508_BWA5}"
+    "NC_021508_BWA5": "${NC_021508_BWA5}",
+    "REPEAT_FILTER_FASTA": "${REPEAT_FILTER_FASTA}"
 }
 EOF
 
