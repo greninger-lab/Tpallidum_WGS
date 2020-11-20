@@ -82,6 +82,32 @@ process mapUnmatchedReads {
     """
 }
 
+// More filtering of reads for de novo assembly
+process moreFiltering {
+    container "staphb/bbtools:latest"
+
+    // Retry on fail at most three times 
+    errorStrategy 'retry'
+    maxRetries 2
+
+    input:
+        tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz")// from TPA_matched_reads2
+        file REPEAT_FILTER_FASTA
+    output:
+        tuple val(base),file("${base}_no_repeat_genes_r1.fastq.gz"), file("${base}_no_repeat_genes_r2.fastq.gz")// into extra_reads
+    
+    publishDir "${params.OUTDIR}extra_filtered_fastqs_for_denovo", mode: 'copy', pattern: '*no_repeat_genes*.fastq.gz'
+
+    script:
+    """
+    #!/bin/bash
+
+    ls -latr
+    /bbmap/bbduk.sh in1='${base}_matched_tpa_r1.fastq.gz' in2='${base}_matched_tpa_r2.fastq.gz' out1='${base}_no_repeat_genes_r1.fastq.gz' out2='${base}_no_repeat_genes_r2.fastq.gz' ref=${REPEAT_FILTER_FASTA} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=14 -Xmx105g
+
+    """
+}
+
 // Take matched reads and map to NC_021508 reference
 process mapReads {
     container "quay.io/biocontainers/bowtie2:2.4.1--py37h8270d21_3"
@@ -200,7 +226,7 @@ process deNovoAssembly {
 
     input:
 //        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq") from Deduped_reads
-        tuple val(base),file("${base}_matched_tpa_r1.fastq.gz"), file("${base}_matched_tpa_r2.fastq.gz")// from TPA_matched_reads2
+        tuple val(base),file("${base}_no_repeat_genes_r1.fastq.gz"), file("${base}_no_repeat_genes_r2.fastq.gz")// from extra_reads
     output:
         tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta")// into Unicycler_ch
         file("*")// into Unicycler_dump_ch
@@ -213,7 +239,7 @@ process deNovoAssembly {
 
     ls -latr
 
-    /usr/local/bin/unicycler -1 ${base}_matched_tpa_r1.fastq.gz -2 ${base}_matched_tpa_r2.fastq.gz -o ./ -t ${task.cpus}
+    /usr/local/bin/unicycler -1 ${base}_no_repeat_genes_r1.fastq.gz -2 ${base}_no_repeat_genes_r2.fastq.gz -o ./ -t ${task.cpus}
     cp assembly.gfa ${base}_assembly.gfa
     cp assembly.fasta ${base}_assembly.fasta
 

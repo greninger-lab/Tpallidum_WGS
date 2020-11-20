@@ -87,6 +87,7 @@ REF_GB = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/N
 TP_MAKE_SEQ = file("${baseDir}/tp_make_seq.R")
 TP_GENERATE_CONSENSUS = file("${baseDir}/tp_generate_consensus.R")
 
+REPEAT_FILTER_FASTA = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/repeat_filter_UPDATE.fasta")
 
 // Read in fastq pairs into input_read_ch
 if(params.SINGLE_END == false){ 
@@ -104,6 +105,7 @@ if(params.SINGLE_END == false){
 include trimReads from './modules'
 include filterTp from './modules'
 include mapUnmatchedReads from './modules'
+include moreFiltering from './modules'
 include mapReads from './modules'
 include samToBam from './modules'
 include removeDuplicates from './modules'
@@ -145,6 +147,10 @@ workflow {
         filterTp.out[1], 
         REF_FASTAS_MASKED
     )
+    moreFiltering (
+        mapUnmatchedReads.out[1],
+        REPEAT_FILTER_FASTA
+    )
     mapReads (
         filterTp.out[0].groupTuple()
             .join(
@@ -169,7 +175,7 @@ workflow {
         NC_021508
     )
     deNovoAssembly (
-        mapUnmatchedReads.out[1]
+        moreFiltering.out[0]
     )
     mergeAssemblyMapping (
         deNovoAssembly.out[0].groupTuple()
