@@ -87,7 +87,8 @@ REF_GB = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/N
 TP_MAKE_SEQ = file("${baseDir}/tp_make_seq.R")
 TP_GENERATE_CONSENSUS = file("${baseDir}/tp_generate_consensus.R")
 
-REPEAT_FILTER_FASTA = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/repeat_filter_UPDATE.fasta")
+//REPEAT_FILTER_FASTA = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/repeat_filter_UPDATE.fasta")
+REPEAT_FILTER_FASTA = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/repeat_filter_with_TprK.fasta")
 
 // Read in fastq pairs into input_read_ch
 if(params.SINGLE_END == false){ 

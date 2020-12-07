@@ -103,7 +103,7 @@ process moreFiltering {
     #!/bin/bash
 
     ls -latr
-    /bbmap/bbduk.sh in1='${base}_matched_tpa_r1.fastq.gz' in2='${base}_matched_tpa_r2.fastq.gz' out1='${base}_no_repeat_genes_r1.fastq.gz' out2='${base}_no_repeat_genes_r2.fastq.gz' ref=${REPEAT_FILTER_FASTA} k=31 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=14 -Xmx105g
+    /bbmap/bbduk.sh in1='${base}_matched_tpa_r1.fastq.gz' in2='${base}_matched_tpa_r2.fastq.gz' out1='${base}_no_repeat_genes_r1.fastq.gz' out2='${base}_no_repeat_genes_r2.fastq.gz' ref=${REPEAT_FILTER_FASTA} k=45 hdist=2 stats='${base}_stats_tp.txt' overwrite=TRUE t=14 -Xmx105g
 
     """
 }
