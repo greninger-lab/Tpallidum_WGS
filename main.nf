@@ -13,8 +13,6 @@ def helpMessage() {
                         ./ can be used for current directory.
                         Fastqs should all be gzipped. This can be done with the command gzip *.fastq. [REQUIRED]
         --OUTDIR        Output directory. [REQUIRED]
-        --SINGLE_END    Optional flag for single end reads. By default, this pipeline does 
-                        paired-end reads.
         
     """.stripIndent()
 }

@@ -1,4 +1,4 @@
-# Adapted for Nextflow Aug 2020
+# Adapted for Nextflow Aug 2020 for T. pallidum
 
 # RSV : This script imports bam files and makes a consensus sequence
 # Pavitra Roychoudhury

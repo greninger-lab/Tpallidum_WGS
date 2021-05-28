@@ -10,7 +10,7 @@ RUN_HEADLESS_PY=/Users/gerbix/Documents/pipelines/clomp_run_scripts/nextflow-aws
 AWS_PROFILE=default
 
 # This refers to the AWS Batch setup
-JOB_QUEUE=covid19
+JOB_QUEUE=multi-az
 
 ####################
 # WORKFLOW OPTIONS #
@@ -18,10 +18,10 @@ JOB_QUEUE=covid19
 
 # Unique Name for this particular batch of samples
 # (no spaces, no special characters, keep it simple)
-SAMPLE_BATCH_NAME=minitp_extrafiltering
-INPUT="s3://covid19-input-data/tpallidum_wgs/mini_tp/"
+SAMPLE_BATCH_NAME=all_cov_250-1000
+INPUT="s3://covid19-input-data/tpallidum_wgs/2020-10-21/all_cov_250-1000/"
 # Make sure the OUTDIR always ends with a '/'
-OUTDIR="s3://covid19-input-data/tpallidum_wgs/mini_tp/2020-11-20_actual_extra_filtering_output/"
+OUTDIR="s3://covid19-input-data/tpallidum_wgs/2020-10-21/all_cov_250-1000/2020-12-16_extra_filtering_output/"
 
 # GitHub repo to run
 WORKFLOW=michellejlin/Tpallidum_WGS

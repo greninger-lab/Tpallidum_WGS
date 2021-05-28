@@ -1,4 +1,4 @@
-# Adapted for Nextflow Aug 2020
+# Adapted for Nextflow Aug 2020 for T. pallidum
 
 # HSV script but works with any viral sequence: This script makes a new reference sequence from de novo assembled scaffolds
 # Pavitra Roychoudhury
