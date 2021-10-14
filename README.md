@@ -10,7 +10,7 @@ This pipeline takes gzipped fastq files and outputs consensus fastas annotated w
 2. Install [docker](https://docs.docker.com/get-docker/).
 
 ## Usage
-- Example command for fastqs in current directory: ```nextflow run greninger-lab/Tpallidum_WGS --INPUT ./ --OUTDIR output/ -resume -with-trace -c ~/nextflow.covid.config -profile Cloud```
+- Example command for fastqs in current directory: ```nextflow run greninger-lab/Tpallidum_WGS --INPUT ./ --OUTDIR output/ -r gates_genomes -resume -with-trace -c ~/nextflow.covid.config -profile Cloud```
 
 
 | Command  | Description |
