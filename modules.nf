@@ -368,9 +368,9 @@ process generateConsensus {
         //tuple val(base),file("${base}_firstmap_dedup.bam")// from Sorted_dedup_bam_ch2
         file(TP_GENERATE_CONSENSUS)
     output:
-        tuple val(base),file("${base}_finalconsensus.fasta"),file("${base}_mappingstats.csv")// into Prokka_consensus_ch
+        tuple val(base),file("${base}_finalconsensusv2.fasta"),file("${base}_mappingstats.csv")// into Prokka_consensus_ch
 
-    publishDir "${params.OUTDIR}finalconsensus", mode: 'copy', pattern: '*_finalconsensus.fasta'
+    publishDir "${params.OUTDIR}finalconsensus_v2", mode: 'copy', pattern: '*_finalconsensusv2.fasta'
 
     script:
     """
@@ -390,9 +390,9 @@ process generatePilonConsensus {
         //tuple val(base),file("${base}_firstmap_dedup.bam")// from Sorted_dedup_bam_ch4
         file(TP_GENERATE_CONSENSUS)
     output:
-        tuple val(base),file("${base}_pilon_finalconsensus.fasta"),file("${base}_pilon_mappingstats.csv")// into Prokka_pilon_consensus_ch
+        tuple val(base),file("${base}_pilon_finalconsensusv2.fasta"),file("${base}_pilon_mappingstats.csv")// into Prokka_pilon_consensus_ch
 
-    publishDir "${params.OUTDIR}finalconsensus", mode: 'copy', pattern: '*_finalconsensus.fasta'
+    publishDir "${params.OUTDIR}finalconsensus_v2", mode: 'copy', pattern: '*_finalconsensusv2.fasta'
 
     script:
     """
@@ -408,7 +408,7 @@ process annotateConsensus {
     container "quay.io/biocontainers/prokka:1.14.6--pl526_0"
 
     input:
-    tuple val(base),file("${base}_finalconsensus.fasta"),file("${base}_mappingstats.csv")// from Prokka_consensus_ch
+    tuple val(base),file("${base}_finalconsensusv2.fasta"),file("${base}_mappingstats.csv")// from Prokka_consensus_ch
     file(REF_GB)
 
     output:
@@ -431,7 +431,7 @@ process annotatePilonConsensus {
     container "quay.io/biocontainers/prokka:1.14.6--pl526_0"
 
     input:
-    tuple val(base),file("${base}_pilon_finalconsensus.fasta"),file("${base}_pilon_mappingstats.csv")// from Prokka_pilon_consensus_ch
+    tuple val(base),file("${base}_pilon_finalconsensusv2.fasta"),file("${base}_pilon_mappingstats.csv")// from Prokka_pilon_consensus_ch
     file(REF_GB)
 
     output:
