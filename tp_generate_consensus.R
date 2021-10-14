@@ -91,13 +91,13 @@ generate_consensus<-function(bamfname){
     #Edit to include a coverage threshold
     cm<-consensusMatrix(qseq_on_ref,as.prob=F,shift=start(gal)-1,width=seqlengths(gal))[c('A','C','G','T','N','-'),];
     #poor_cov<-which(colSums(cm)<10);
-    poor_cov<-which(colSums(cm)<6);
+    poor_cov<-which(colSums(cm)<4);
     #poor_cov<-which(colSums(cm)<coverage_cutoff);
     cm<-apply(cm,2,function(x)x/sum(x));
     cm[,poor_cov]<-0;
     cm['N',poor_cov]<-1;
     
-    tmp_str<-strsplit(consensusString(cm,ambiguityMap='?',threshold=0.5),'')[[1]];
+    tmp_str<-strsplit(consensusString(cm,ambiguityMap='?',threshold=0.75),'')[[1]];
     ambig_sites<-which(tmp_str=='?');
     ambig_bases<-unlist(lapply(ambig_sites,function(i){mixedbase<-paste(names(cm[,i])[cm[,i]>0],collapse=''); 
     			 if(mixedbase%in%IUPAC_CODE_MAP) return(names(IUPAC_CODE_MAP)[IUPAC_CODE_MAP==mixedbase]) 
@@ -155,7 +155,7 @@ if(conseq==TRUE){
   con_seq<-readDNAStringSet(fname);
   con_seq_trimmed<-DNAStringSet(gsub("N*N$",'',gsub("^N*",'',as.character(con_seq))));
   names(con_seq_trimmed)<-substring(names(con_seq),1,20); #prokka needs contig name to be <=20 chars long
-  writeXStringSet(con_seq_trimmed,file=paste(sampname,'_finalconsensus.fasta',sep=''),format='fasta');
+  writeXStringSet(con_seq_trimmed,file=paste(sampname,'_finalconsensusv2.fasta',sep=''),format='fasta');
 	
 }else{
 	print('Failed to generate consensus sequences.')
