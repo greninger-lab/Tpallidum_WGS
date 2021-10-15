@@ -420,8 +420,8 @@ process annotateConsensus {
     """
     ls -latr
  
-    #prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_finalconsensus.fasta
-    prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_finalconsensus.fasta
+    #prokka --outdir ./ --force --kingdom 'Bacteria' --genus 'Treponema' --usegenus --prefix ${base} ${base}_finalconsensusv2.fasta
+    prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_finalconsensusv2.fasta
 
     """
 }
@@ -443,7 +443,7 @@ process annotatePilonConsensus {
     """
     ls -latr
  
-    prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_pilon_finalconsensus.fasta
+    prokka --proteins ${REF_GB} --outdir ./ --force --prefix ${base} ${base}_pilon_finalconsensusv2.fasta
 
     """
 }
