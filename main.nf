@@ -79,6 +79,15 @@ NC_021508_BWA3 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WG
 NC_021508_BWA4 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta.pac")
 NC_021508_BWA5 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.fasta.sa")
 
+//Nichols ref bwa indexes
+NC_021490_BWA1 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/Nichols_refs/NC_021490.fasta.amb")
+NC_021490_BWA2 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/Nichols_refs/NC_021490.fasta.ann")
+NC_021490_BWA3 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/Nichols_refs/NC_021490.fasta.bwt")
+NC_021490_BWA4 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/Nichols_refs/NC_021490.fasta.pac")
+NC_021490_BWA5 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/Nichols_refs/NC_021490.fasta.sa")
+
+NC_021490 = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/Nichols_refs/NC_021490.fasta")
+
 REF_GB = file("s3://clomp-reference-data/tool_specific_data/Tpallidum_WGS/refs/NC_021508.gb")
 
 // Scripts
@@ -181,12 +190,12 @@ workflow {
             .join(
                 removeDuplicates.out[1].groupTuple()
         ),
-        file(NC_021508),
-        file(NC_021508_BWA1),
-        file(NC_021508_BWA2),
-        file(NC_021508_BWA3),
-        file(NC_021508_BWA4),
-        file(NC_021508_BWA5),
+        file(NC_021490),
+        file(NC_021490_BWA1),
+        file(NC_021490_BWA2),
+        file(NC_021490_BWA3),
+        file(NC_021490_BWA4),
+        file(NC_021490_BWA5),
         file(TP_MAKE_SEQ)
     )
     remapReads (
