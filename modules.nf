@@ -257,12 +257,12 @@ process mergeAssemblyMapping {
     input:
         tuple val(base),file("${base}_assembly.gfa"),file("${base}_assembly.fasta"),file("${base}_firstmap_dedup.bam")// from Unicycler_ch
         //tuple val(base),file("${base}_firstmap_dedup.bam")// from Sorted_dedup_bam_ch
-        file(NC_021508)
-        file(NC_021508_BWA1)
-        file(NC_021508_BWA2)
-        file(NC_021508_BWA3)
-        file(NC_021508_BWA4)
-        file(NC_021508_BWA5)
+        file(NC_021490)
+        file(NC_021490_BWA1)
+        file(NC_021490_BWA2)
+        file(NC_021490_BWA3)
+        file(NC_021490_BWA4)
+        file(NC_021490_BWA5)
         file(TP_MAKE_SEQ)
     output:
         tuple val(base),file("${base}_consensus.fasta")// into Consensus_ch
@@ -282,7 +282,7 @@ process mergeAssemblyMapping {
     cp ${base}_assembly.gfa assembly.gfa
     cp ${base}_assembly.fasta assembly.fasta
 
-    Rscript --vanilla ${TP_MAKE_SEQ} \'${base}\' \'NC_021508\'
+    Rscript --vanilla ${TP_MAKE_SEQ} \'${base}\' \'NC_021490\'
     """
 }
 
