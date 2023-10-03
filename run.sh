@@ -1,0 +1,1 @@
+nextflow run /Users/administrator/Desktop/Tpallidum_WGS-gates_genomes/main.nf --INPUT ./ --OUTDIR Output/ -resume -with-trace -c /Users/administrator/Desktop/Important/nextflow.covid.config -profile Cloud -with-tower
