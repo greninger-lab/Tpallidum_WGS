@@ -566,30 +566,30 @@ process annotateVCFs {
 
 }
 
-process mlst {
-    container "staphb/mlst"
+//process mlst {
+//    container "staphb/mlst"
 
-    input:
+//    input:
 
-    tuple val(base),file("${base}_pilon_finalconsensusv2.fasta"),file("${base}_pilon_mappingstats.csv")// from Prokka_pilon_consensus_ch
+//    tuple val(base),file("${base}_pilon_finalconsensusv2.fasta"),file("${base}_pilon_mappingstats.csv")// from Prokka_pilon_consensus_ch
 
-    output:
+//    output:
 
-        file("*.tsv")
+//        file("*.tsv")
 
-    publishDir "${params.OUTDIR}mlst", mode: 'copy', pattern: '*.tsv'
+//    publishDir "${params.OUTDIR}mlst", mode: 'copy', pattern: '*.tsv'
 
-    script:
+//    script:
 
-    """
+//    """
 
-    #!/bin/bash
+//    #!/bin/bash
 
-    mlst "${base}_pilon_finalconsensusv2.fasta-q > ${base}_MLST.tsv
+//    mlst "${base}_pilon_finalconsensusv2.fasta-q > ${base}_MLST.tsv
 
-    """
+//    """
 
-}
+//}
 // // QC_stats
 // process stats {
 //     container "quay.io/michellejlin/tpallidum_wgs:latest"

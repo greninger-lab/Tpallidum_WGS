@@ -149,7 +149,7 @@ include {generatePilonConsensus} from './modules'
 //include {annotateConsensus} from './modules'
 include {annotatePilonConsensus} from './modules'
 include {annotateVCFs} from './modules'
-include {mlst} from './modules'
+//include {mlst} from './modules'
 //include {stats} from './modules'
 
 ////////////////////////////////////////////////////////
@@ -315,9 +315,9 @@ workflow {
 
         file(NC_021508)
     )
-    mlst (
-        generatePilonConsensus.out
-    )
+    //mlst (
+    //    generatePilonConsensus.out
+    //)
 
     }
     
