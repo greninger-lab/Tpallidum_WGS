@@ -270,9 +270,9 @@ workflow {
 
         file(NC_021508)
     )
-    mlst (
-        generatePilonConsensus.out
-    )
+    //mlst (
+    //    generatePilonConsensus.out
+    //)
 
     }
     
