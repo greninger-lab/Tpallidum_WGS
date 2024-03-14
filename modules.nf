@@ -11,7 +11,7 @@ process trimReads {
         file ADAPTERS
     output:
         tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz")// into Trim_out_ch
-        file("*.csv")
+        //file("*.csv")
 
     //publishDir "${params.OUTDIR}trimmed_fastqs", mode: 'copy', pattern: '*.paired.fastq.gz'
     publishDir "${params.OUTDIR}trimmed_fastqs", mode: 'copy', pattern: '*'
@@ -23,18 +23,6 @@ process trimReads {
     ls -latr
     trimmomatic PE -threads ${task.cpus} ${R1} ${R2} ${base}.R1.paired.fastq.gz ${base}.R1.unpaired.fastq.gz ${base}.R2.paired.fastq.gz ${base}.R2.unpaired.fastq.gz \
     ILLUMINACLIP:${ADAPTERS}:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:20 -trimlog ./logFile.txt
-
-    echo "sample,raw_reads,trimmed_reads,firstmap_bam_reads,on_target_pct,dedup_bam_reads,,,ambiguities" >> stats${base}.csv
-
-    base=${base}
-    raw=\$(gzcat ${R1} | echo "\$((`wc -l` / 2))")
-    trimmed=\$(gzcat ./trimmed_fastqs/${base}.R1.paired.fastq.gz | echo "\$((`wc -l` / 2))")
-    firstmap_mapped=${base}
-    dedup_mapped=${base}
-    amb=${base}
-
-    #echo ${base}","\$raw","\$trimmed","\$firstmap_mapped",,"\$dedup_mapped",,,,"\$amb >> stats.csv
-    #echo ${base}","\$raw","\$trimmed","\$firstmap_mapped",,"\$dedup_mapped",,,,"\$amb >> stats${base}.csv
 
     """
 }
@@ -84,7 +72,7 @@ process mapUnmatchedReads {
 
         // tuple val(base),file("${base}_unmatched_tpa_r1.fastq.gz"), file("${base}_unmatched_tpa_r2.fastq.gz")// into TPA_unmatched_reads
 
-    publishDir "${params.OUTDIR}TPA_filtered_fastqs", mode: 'copy', pattern: '*_matched_tpa*.fastq.gz'
+    publishDir "${params.OUTDIR}TPA_filtered_fastqs", mode: 'copy', pattern: '*matched_tpa*.fastq.gz'
 
     script:
     """
@@ -171,6 +159,8 @@ process samToBam {
     output:
         tuple val(base),file("${base}_firstmap.sorted.bam")// into Sorted_bam_ch
         file("*.fasta") optional true
+
+    publishDir "${params.OUTDIR}_firstmap.sorted.bam", mode: 'copy', pattern: '*_firstmap.bam'
 
     script:
     """
@@ -450,8 +440,6 @@ process pilonPolishing {
     """
 }
 
-//java -jar pilon.jar --genome ${base}_consensus.fasta --frags ${base}_remapped.sorted.bam --output ${base}_pilon --vcf --changes
-
 process remapPilon {
     container "quay.io/michellejlin/tpallidum_wgs"
 
@@ -528,20 +516,19 @@ process annotatePilonConsensus {
     """
 }
 
+
 process annotateVCFs {
-    container "quay.io/vpeddu/lava_image:latest"
+    container "cave42/snippy_tp_wgs"
 
     input:
 
-        file(CONVERT_TO_ANNOVAR)
-        file(GFF3_TO_GENE_PRED)
-        file(RETRIEVE_SEQ_FROM_FASTA)
-        file(ANNOTATE_VARIATION)
-        file(GFF)
-
-        tuple val(base), file("${base}.vcf")
-
-        file("${params.REFERENCE}.fasta")
+        tuple val(base), file("${base}.R1.paired.fastq.gz"), file("${base}.R2.paired.fastq.gz")
+        tuple val(base),file("${base}_firstmap_dedup.bam")
+        tuple val(base),file("${base}_firstmap.sorted.bam")
+        file(REF_GB)
+        file(NC_021508)
+        tuple val(base),file("${base}_deduped_r1.fastq"),file("${base}_deduped_r2.fastq")
+        
 
     output:
 
@@ -554,94 +541,8 @@ process annotateVCFs {
     """
     #!/bin/bash
 
-    ${CONVERT_TO_ANNOVAR}  -withfreq -includeinfo -format vcf4 ${base}.vcf > variant.avinput
-
-    ${GFF3_TO_GENE_PRED} ${GFF}  AT_refGene.txt -warnAndContinue -useName -allowMinimalGenes
-
-    ${RETRIEVE_SEQ_FROM_FASTA} --format refGene --seqfile ${params.REFERENCE}.fasta AT_refGene.txt --out AT_refGeneMrna.fa
-
-    ${ANNOTATE_VARIATION}  -outfile ${base} -v -buildver AT variant.avinput  .
-
+    snippy --outdir ${base} --ref ${REF_GB} --R1 ${base}_deduped_r1.fastq--R2 ${base}_deduped_r2.fastq --cpus 16  --report
+    
     """
 
 }
-
-//process mlst {
-//    container "staphb/mlst"
-
-//    input:
-
-//    tuple val(base),file("${base}_pilon_finalconsensusv2.fasta"),file("${base}_pilon_mappingstats.csv")// from Prokka_pilon_consensus_ch
-
-//    output:
-
-//        file("*.tsv")
-
-//    publishDir "${params.OUTDIR}mlst", mode: 'copy', pattern: '*.tsv'
-
-//    script:
-
-//    """
-
-//    #!/bin/bash
-
-//    mlst "${base}_pilon_finalconsensusv2.fasta-q > ${base}_MLST.tsv
-
-//    """
-
-//}
-// // QC_stats
-// process stats {
-//     container "quay.io/michellejlin/tpallidum_wgs:latest"
-//
-//     input:
-//
-//     tuple val(base), file(R1), file(R2)// from input_read_ch
-//     //file("stats.csv")// from Stat_Initial
-//
-//     output:
-//
-//     file("*")//// into QC_stats
-//
-//     publishDir "${params.OUTDIR}Stats", mode: 'copy', pattern: '*'
-//
-//     script:
-//     """
-//
-//     #!/bin/bash
-//
-//     echo "sample,raw_reads,trimmed_reads,firstmap_bam_reads,on_target_pct,dedup_bam_reads,,,ambiguities" >> stats.csv
-//     echo "sample,raw_reads,trimmed_reads,firstmap_bam_reads,on_target_pct,dedup_bam_reads,,,ambiguities" >> stats${base}.csv
-//
-//     #for i in *_R1.fastq.gz
-//     #do
-//     base=${base}
-//     raw=\$(gzcat ${base}_R1.fastq.gz | echo "\$((`wc -l` / 2))")
-//     trimmed=${base}
-//     firstmap_mapped=${base}
-//     dedup_mapped=${base}
-//     amb=${base}
-//
-//     #echo \$base","\$raw","\$trimmed","\$firstmap_mapped",,"\$dedup_mapped",,,,"\$amb
-//     #done >> stats.csv
-//
-//     echo ${base}","\$raw","\$trimmed","\$firstmap_mapped",,"\$dedup_mapped",,,,"\$amb >> stats.csv
-//     echo ${base}","\$raw","\$trimmed","\$firstmap_mapped",,"\$dedup_mapped",,,,"\$amb >> stats${base}.csv
-//
-//     #cp stats.csv stats2.csv
-//
-//     """
-// }
-
-// base=\$(basename \$i _R1.fastq.gz)
-// raw=\$(basename \$i _R1.fastq.gz)
-// trimmed=\$(basename \$i _R1.fastq.gz)
-// firstmap_mapped=\$(basename \$i _R1.fastq.gz)
-// dedup_mapped=\$(basename \$i _R1.fastq.gz)
-// amb=\$(basename \$i _R1.fastq.gz)
-
-    // raw=\$(gzcat \$i | echo "\$((`wc -l` / 2))")
-    // trimmed=$(gzcat ./trimmed_fastqs/${base}.R1.paired.fastq.gz | echo "$((`wc -l` / 2))")
-    // firstmap_mapped=$(samtools view -c -F 4 ./firstmap_bams/${base}_firstmap.sorted.bam)
-    // dedup_mapped=$(samtools view -c -F 4 ./deduped_bams/dedup/${base}_firstmap_dedup.bam)
-    // amb=$(grep -o 'N' ./final_consensus_merged/${base}_mincov6_merged_final_consensus.fasta | wc -l)

@@ -148,7 +148,9 @@ include {remapPilon} from './modules'
 include {generatePilonConsensus} from './modules'
 //include {annotateConsensus} from './modules'
 include {annotatePilonConsensus} from './modules'
+
 include {annotateVCFs} from './modules'
+
 //include {mlst} from './modules'
 //include {stats} from './modules'
 
@@ -170,19 +172,23 @@ workflow {
         input_read_ch,
         ADAPTERS
     )
+
     filterTp (
         //trimReads.out,
         trimReads.out[0],
         REF_FASTAS
     )
+
     mapUnmatchedReads (
         filterTp.out[1],
         REF_FASTAS_MASKED
     )
+
     moreFiltering (
         mapUnmatchedReads.out[1],
         REPEAT_FILTER_FASTA
     )
+
     mapReads (
         filterTp.out[0].groupTuple()
             .join(
@@ -198,6 +204,7 @@ workflow {
         NC_021508_6
 
     )
+
     samToBam (
         mapReads.out,
     )
@@ -237,6 +244,7 @@ workflow {
                 removeDuplicates.out[5].groupTuple()
         )
     )
+    
     pilonPolishing (
         remapReads.out[1]
     )
@@ -255,21 +263,31 @@ workflow {
         ),
         TP_GENERATE_CONSENSUS
     )
+
     annotatePilonConsensus (
         generatePilonConsensus.out,
         REF_GB,
     )
+
+    
+
     annotateVCFs (
-        file(CONVERT_TO_ANNOVAR),
-        file(GFF3_TO_GENE_PRED),
-        file(RETRIEVE_SEQ_FROM_FASTA),
-        file(ANNOTATE_VARIATION),
-        file(GFF),
 
-        callVariants.out[0],
-
-        file(NC_021508)
+        trimReads.out[0], 
+        removeDuplicates.out[2],
+        samToBam.out[0],
+        REF_GB,
+        NC_021508,
+        removeDuplicates.out[4]
     )
+
+    /*
+    annotateVCFs (
+        trimReads.out[0], 
+        REF_GB
+    )
+    */
+
     //mlst (
     //    generatePilonConsensus.out
     //)
@@ -291,6 +309,7 @@ workflow {
                 removeDuplicates.out[6].groupTuple()
         )
     )
+
     generatePilonConsensus (
         remapPilon.out[0].groupTuple(
             ).join(
@@ -300,10 +319,26 @@ workflow {
         ),
         TP_GENERATE_CONSENSUS
     )
+
     annotatePilonConsensus (
         generatePilonConsensus.out,
         REF_GB
     )
+
+    annotateVCFs (
+
+        trimReads.out[0], 
+        removeDuplicates.out[2],
+        samToBam.out[0],
+        REF_GB,
+        NC_021508,
+        removeDuplicates.out[4]
+    )
+
+    
+
+    /*
+
     annotateVCFs (
         file(CONVERT_TO_ANNOVAR),
         file(GFF3_TO_GENE_PRED),
@@ -315,6 +350,8 @@ workflow {
 
         file(NC_021508)
     )
+    */
+
     //mlst (
     //    generatePilonConsensus.out
     //)
