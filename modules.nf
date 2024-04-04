@@ -541,7 +541,7 @@ process annotateVCFs {
     """
     #!/bin/bash
 
-    snippy --outdir ${base} --ref ${REF_GB} --R1 ${base}_deduped_r1.fastq--R2 ${base}_deduped_r2.fastq --cpus 16  --report
+    snippy --outdir ${base} --ref ${REF_GB} --R1 ${base}_deduped_r1.fastq --R2 ${base}_deduped_r2.fastq --cpus 16  --report
     
     """
 
