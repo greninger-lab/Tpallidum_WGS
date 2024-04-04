@@ -29,7 +29,7 @@ process trimReads {
 
 // Use bbduk to filter reads that match rRNA more stringently
 process filterTp {
-    container "staphb/bbtools:latest"
+    container "staphb/bbtools:39.00"
 
     // Retry on fail at most three times
     errorStrategy 'retry'
