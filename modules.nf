@@ -57,7 +57,7 @@ process filterTp {
 
 // Take unmatched reads from rRNA filter and map to TPA genome less stringently
 process mapUnmatchedReads {
-    container "staphb/bbtools:latest"
+    container "staphb/bbtools:39.00"
 
     // Retry on fail at most three times
     errorStrategy 'retry'
@@ -86,7 +86,7 @@ process mapUnmatchedReads {
 
 // More filtering of reads for de novo assembly
 process moreFiltering {
-    container "staphb/bbtools:latest"
+    container "staphb/bbtools:39.00"
 
     // Retry on fail at most three times
     errorStrategy 'retry'
