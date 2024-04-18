@@ -1,5 +1,5 @@
 
-#This is an older version of the repo please use 
+# This is an older version of the repo please use 
 https://github.com/greninger-lab/Tpallidum_WGS_Pipeline
 
 # Tpallidum WGS
