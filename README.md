@@ -1,3 +1,7 @@
+
+#This is an older version of the repo please use 
+https://github.com/greninger-lab/Tpallidum_WGS_Pipeline
+
 # Tpallidum WGS
 This pipeline is intended for assembly and annotation of Treponema pallidum whole genomes.
 
